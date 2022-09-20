@@ -12,7 +12,7 @@
 
 ##### embedding：把序号映射成低维的稠密向量。
 
-Embedding的原理其实是用一个参数矩阵乘以one hot编码。举个例子，如果一个特征有20个类别，我们希望用一个5维的[embedding](https://www.zhihu.com/search?q=embedding&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra={"sourceType"%3A"answer"%2C"sourceId"%3A2637307981})来表示这个特征。那么我们需要一个 5×205\times20 的参数矩阵，用这个矩阵把这个特征20维的one hot编码投影到5维空间里面。这个参数矩阵有很多训练方法，一个比较好的embedding可以很好的描述特征类别之间的关系，比如电影中，同类别的电影所对应的embedding向量会很接近。
+Embedding的原理其实是用一个参数矩阵乘以one hot编码。举个例子，如果一个特征有20个类别，我们希望用一个5维的[embedding](https://www.zhihu.com/search?q=embedding&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra={"sourceType"%3A"answer"%2C"sourceId"%3A2637307981})来表示这个特征。那么我们需要一个 $5\times20$ 的参数矩阵，用这个矩阵把这个特征20维的one hot编码投影到5维空间里面。这个参数矩阵有很多训练方法，一个比较好的embedding可以很好的描述特征类别之间的关系，比如电影中，同类别的电影所对应的embedding向量会很接近。
 
 现在有很多公开的embedding模型，比如自然语言处理中的**BERT**，BERT用wiki data的数据为英文单词训练了一套pretrianed embedding，现在在工业界非常常用。很多场景当中把这个训练好的embedding拿来在自己的数据集fine tune一下即可立刻投入使用。
 
@@ -45,15 +45,24 @@ $$
 
 #### 小批量样本的矢量化
 
-读取样本 $X$，其中==特征数量为$d$，批量大小为$n$，假设输出有$q$个类别==，那么小批量样本的特征为$X\in R^{n\times d}$, 权重为 
+读取样本 $X$，其中特征数量为$d$，批量大小为$n$，假设输出有$q$个类别，则网络输出有$q$个类别，那么小批量样本的特征为$X\in R^{n\times d}$, 权重为 $W \in R^{d\times q}$ , 偏置为 $b\in R^{1\times q}$ ，输出为 $O \in R^{n\times q}$, $O_{nq}$的一行代表一个样本的权重输出，预测值$\hat{Y}\in R^{n\times q}$，$\hat{Y}_{n\times q}$的一行代表一个样本在各个类别的预测概率值，共有$n$个样本。softmax回归的矢量计算表达式为:
 
-$W \in R^{d\times q}$ , 偏置为 $b\in R^{1\times q}$ ,softmax回归的矢量计算表达式为:
 $$
 \begin{aligned}
 O = XW+b\\
 \hat{Y}=softmax(O) = softmax(XW+b)
 \end{aligned}
 $$
+
+ $X$中一行代表一个样本，每一行为d个输入特征；
+
+**实现softmax的步骤**
+
+- 对 $O_{nq}$中每一项求幂；
+- 对每一行求和（小批量中每个样本是一行），得到每个样本的规范化常数$\sum_{k=1}^qexp(o_{jk}) \  (j=1,2,...,n)$
+- 将每一行除以其规范化常数，确保结果的和为1
+
+
 
 #### 损失函数
 
@@ -80,7 +89,7 @@ $$
 
 多分类的情况就是对二分类进行拓展
 $$
-P(Y|X) = \prod_{i=1}^n{(\hat{y}^{(i)})^{y^{(i)}}}
+P(Y|X) = \prod_{i=1}^nP(\hat{y}^{(i)}|x^{(i)})=  \prod_{i=1}^n{(\hat{y}^{(i)})^{y^{(i)}}}
 $$
 
 > $y_i$表示样本 $i$ 的label，正类为 1 ，负类为0
@@ -90,6 +99,11 @@ $$
 > $q$ :分类类别数
 >
 > $n$ : 样本数
+
+$$
+-logP(X|Y) = -\sum_{i=1}^n logP(\hat{y}^{(i)}|x^{(i)}) = -\sum_{i=1}^n L(y^{(i)},\hat{y}^{(i)})
+$$
+
 
 $$
 L(y,\hat{y}) = - \sum_{j=1}^q y_{j}log\hat{y}_j
