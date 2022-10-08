@@ -43,7 +43,7 @@
 
 ![img](https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/70.png)
 
-![img](https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/70-20220913172058152.png)
+<img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/70-20220913172058152.png" alt="img" style="zoom:50%;" />
 
 ![img](https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/70-20220913172132070.png)
 

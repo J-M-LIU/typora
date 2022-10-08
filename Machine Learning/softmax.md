@@ -104,6 +104,7 @@ $$
 -logP(X|Y) = -\sum_{i=1}^n logP(\hat{y}^{(i)}|x^{(i)}) = -\sum_{i=1}^n L(y^{(i)},\hat{y}^{(i)})
 $$
 
+一个样本对应的损失函数为：
 
 $$
 L(y,\hat{y}) = - \sum_{j=1}^q y_{j}log\hat{y}_j
@@ -122,6 +123,13 @@ $$
 
 对于 $o_j$ 求导得到：
 $$
-L'(y,\hat{y}) =\frac{exp(o_j)}{\sum_{k=1}^q exp(o_k)} - y_j = softmax(o)_j - y_j
+\frac{\partial{L(y_j,\hat{y_j})}}{\partial{o_j}} = L'(y,\hat{y}) =\frac{exp(o_j)}{\sum_{k=1}^q exp(o_k)} - y_j = softmax(o_j) - y_j
+$$
+**参数更新**
+$$
+\frac{\partial{L}}{\partial{w_{ij}}} = \frac{\partial{L}}{\partial{o_j}} \frac{\partial{o_j}}{\partial{w_{ij}}} = (softmax(o_j) - y_j)·x_i   \\i \in[1,d],j\in[1,q]
 $$
 换句话说，导数是我们softmax模型分配的概率与实际发生的情况(由独热标签向量表示)之间的差异。从这个意义上讲，这与我们在回归中看到的非常相似，其中梯度是观测值 $y$ 和估计值 $\hat{y}$ 之间的差异。
+
+
+
