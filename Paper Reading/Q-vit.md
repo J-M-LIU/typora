@@ -13,8 +13,8 @@
 - low-rank decomposition
 - quantization 
 - knowledge distillation
-- post-training quantization：PTQ——>模型性能降低
-- QAT:quantization-aware training: higher comperssion rate without performance drop，对于CNN模型有效，但是还未探索一种适用于Vision Transformer的模型压缩方法
+- post-training quantization：模型性能降低
+- QAT:quantization-aware training: higher comperssion rate without performance drop，常见于对CNN模型的应用，但还未探索一种适用于Vision Transformer的模型压缩方法
 
 
 
@@ -24,7 +24,7 @@
 
 #### Vision Transformer
 
-- DynamicViT
+- DynamicViT：研究如何对transformer里面涉及到的token进行prune，来删除一些信息量不大（或者说对模型性能影响不大）的token，从而降低模型的计算量，减小模型运行的时间开销。
 - Evo-ViT
 
 以上模型着重于高效模型的设计，来得到更为轻量、快速的Vision Transformer；本文重点在于模型的**压缩**和**加速**，实现一个基于**QAT**的全量化Vision Transformer
