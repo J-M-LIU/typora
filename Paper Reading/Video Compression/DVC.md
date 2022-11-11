@@ -63,7 +63,7 @@ $$
 ​	估计当前帧 $x_t$和前一重构帧 $\hat{x}_{t-1}$ 之间的运动，得到每个块对应的运动矢量 $v_t$。
 
 ​	**Setp 2. 运动补偿**	
-​	基于 **Step 1**中定义的运动矢量 $v_t$ ，通过将前一重构帧中的对应像素复制到当前帧来获得预测帧 $\bar{x}_t$ 。原始帧 $x_t$ 与预测帧 $\bar{x}_t$之间的残差为 $r_t = x_t - \bar{x}_t$ 。
+​	基于 **Step 1**中定义的运动矢量 $v_t$，通过将前一重构帧中的对应像素复制到当前帧来获得预测帧 $\bar{x}_t$ 。原始帧 $x_t$ 与预测帧 $\bar{x}_t$之间的残差为 $r_t = x_t - \bar{x}_t$ 。
 
 ​	**Step 3. 变换与量化**
 ​	**Step 2**的残差 $r_t$量化为 $\hat{y}_t$. 量化前使用线性变换（如DCT，变换至频域获得更好的压缩效果）。
@@ -72,12 +72,12 @@ $$
 ​	**Step 3**中的量化结果 $\hat{y}_t$ 通过逆变换获得重构残差 $\hat{r_t}$ 。
 
 ​	**Step 5. 熵编码**
-​	**Step 1**中的运动矢量 $v_t$ 和 **Step 3**中的量化结果 $\hat{y}_t$ 熵编码后发送到解码器端。
+​	**Step 1**中的运动矢量 $v_t$ 和 **Step 3**中的残差量化结果 $\hat{y}_t$ 熵编码后发送到解码器端。
 
 ​	**Step 6. 帧重构**
 ​	**Step 2**中的预测帧 $\bar{x}_t$ 和 **Step 4**中的重构残差 $\hat{r}_t$相加，$\hat{x}_t = \bar{x}_t + \hat{r}_t$ ,获得重构帧。$\hat{x}_t$ 将被用于第 $t+1$ 步的运动估计。
 
-​	解码器端：根据发送到解码器端端 $v_t$ 和 $\hat{y}_t$ ，在Step 2中进行运动补偿，得到 $\bar{x}_t$， 并在  **Step 4** 中对 $\hat{y_t}$ 反量化得到 $\hat{r_t}$，然后在**Step 6** 中进行帧重构获得 $\hat{x_t}$ .
+​	解码器端：根据发送到解码器端的 $v_t$ 和 $\hat{y}_t$ ，在Step 2中进行运动补偿，得到 $\bar{x}_t$， 并在  **Step 4** 中对 $\hat{y_t}$ 反量化得到 $\hat{r_t}$，然后在**Step 6** 中进行帧重构获得 $\hat{x_t}$ .
 
 ### Proposed Mehtod
 
@@ -100,11 +100,15 @@ $$
 ​	**Step N6. 帧重构**
 ​	**Step N2**中的预测帧 $\bar{x}_t$ 和 **Step N4**中的重构残差 $\hat{r}_t$相加，$\hat{x}_t = \bar{x}_t + \hat{r}_t$ ,获得重构帧。$\hat{x}_t$ 将被用于第 $t+1$ 步的运动估计。
 
- 
+
 
 ### Motion Estimation
 
+参考 Optical Flow Estimation using a Spatial Pyramid Network.
 
+在DVC基础上改进：pyramid估计光流和整个压缩系统联合优化。下图右侧为联合优化重建光流，在人体等较为平滑的区域像素零值更多，更易于压缩。
+
+<img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/20221031100621.png" style="zoom:50%;" />
 
 
 
@@ -147,11 +151,13 @@ $$
 
 ​	**运动补偿CNN结构** 
 
-<img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20221024095332005.png" alt="image-20221024095332005" style="zoom:67%;" />
+<img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20221024095332005.png" alt="image-20221024095332005" style="zoom:30%;" />
 
 ### Residual Encoder and Decoder Network
 
-​	参考[Variational image compression with a scale hyperprior.]
+参考 Variational image compression with a scale hyperprior.
+
+将残差信息 $r_t$ 通过非线性网络(Variational image compression with a scale hyperprior) 进行编码/压缩。
 
 
 
@@ -169,6 +175,12 @@ $$
 
 ​	量化后会导致梯度几乎处处为0，无法训练。这里通过在训练阶段**加入均匀噪声来代替量化运算**。以 $y_t$ 为例，训练阶段的量化表示 $\hat{y}_t$ 是通过在 $y_t$ 上加上均匀噪声 $\eta$ 来近似得到的，即 $\hat{y}_t = y_t + \eta$ ；在推理阶段，四舍五入取整，即 $\hat{y}_t = round(y_t)$ .
 
+**比特率估计**
+
+参考 Variational image compression with a scale hyperprior.
+
+
+
 ## Experiments
 
 ### Setup
@@ -178,5 +190,3 @@ $$
 **Detail** 使用不同 $\lambda$ (256, 512, 1024, 2048) , adam优化器，初始学习率0.0001，损失趋于稳定时，学习率除以10. 训练图像 256 $\times$ 256 .
 
 
-
-# DVC-PRO
