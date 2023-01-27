@@ -138,7 +138,7 @@ $$
 
 ### Motion Compensation Network
 
-​	给定前一重构帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$，运动补偿网络获得预测帧 $\hat{x}_t$。为了消除伪影，将变换帧 $warp(\hat{x}_{t-1},\hat{v}_t)$，参考帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$ wrap操作输入一个CNN中。基于像素级的运动补偿可以有效避免了传统的基于块的运动补偿方法中的块效应。
+​	给定前一重构帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$，运动补偿网络获得预测帧 $\hat{x}_t$。为了消除伪影，将变换帧 $warp(\hat{x}_{t-1},\hat{v}_t)$，参考帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$ wrap操作输入一个CNN中。基于像素级的运动补偿可以有效避免传统的基于块的运动补偿方法导致的块效应。
 
 <img src="https://img-blog.csdnimg.cn/2020101017145968.png#pic_center" style="zoom:67%;" />
 
