@@ -1,8 +1,6 @@
-# 视频编码
-
-
-
 # DVC: An End-to-end Deep Video Compression
+
+
 
 ## Introduction 
 
@@ -12,7 +10,7 @@
 
 - 率失真优化
 
-提出end-to-end网络模型，其中视频压缩的关键模块（运动估计、运动补偿、变换量化等）都通过该模型实现，且和传统的视频压缩算法模块有一对一的关系。
+​	提出end-to-end网络模型，其中视频压缩的关键模块（运动估计、运动补偿、变换、量化、熵编码）都通过该模型实现，且和传统的视频压缩算法模块有一对一的关系。
 
 ## Related Work
 
@@ -24,18 +22,15 @@
 
 ### Video Compression 
 
-- 大部分仍沿用传统的视频压缩算法，手动设计，无法以端到端的方式联合优化；
+- 大部分仍沿用传统的视频压缩算法，手工设计，无法以端到端的方式联合优化；
 - 已有的部分基于DNN的帧内预测、残差编码针对一特定模块，非端到端的压缩方式；
 - `Video compression through image interpolation. In ECCV, September 2018.`基于RNN的压缩方法，采用帧插值(frame interpolation), 但仍采用基于块的运动估计；同时只考虑了原始帧和重构帧之间的失真(MSE)最小化，未考虑整个编解码过程中**率失真**的平衡。
 
-### Motion Estimation 
 
-​	本文采用光流运动估计的方法，相较于传统的基于块的运动估计，可以提供像素级的更为精确的运动信息。
 
 ## Proposed Method
 
 ​	**Notations**
-
 ​	${x_1,x_2,...,x_{t-1},x_{t},...}$ 表示视频帧序列，$x_t$表示 $t$ 时间步时刻的视频帧；
 ​	$v_t$: 块运动向量/光流信息；
 ​	$\hat{v}_t$: 重构运动信息；
@@ -49,9 +44,7 @@ r_t \stackrel{transform}{\longrightarrow} y_t \stackrel{quantize}{\longrightarro
 v_t \stackrel{transform}{\longrightarrow} m_t \stackrel{quantize}{\longrightarrow} \hat{m}_t \stackrel{decoder}{\longrightarrow} \hat{v}_t
 $$
 
-
-
-<img src="https://img-blog.csdnimg.cn/20201010163822194.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2x3cGx3Zg==,size_16,color_FFFFFF,t_70#pic_center" style="zoom:55%;" />
+<img src="https://img-blog.csdnimg.cn/20201010163822194.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2x3cGx3Zg==,size_16,color_FFFFFF,t_70#pic_center" style="zoom: 70%;" />
 
 
 
@@ -60,9 +53,9 @@ $$
 ​	传统的视频压缩框架将输入帧分成相同大小的 $n\times n$ 块，并基于块进行运动估计。Figure 2 中，编码器端包含所有模块，解码器端不包含蓝色模块。压缩框架中编码器端的过程如下。
 
 ​	**Step 1.  运动估计**
-​	估计当前帧 $x_t$和前一重构帧 $\hat{x}_{t-1}$ 之间的运动，得到每个块对应的运动矢量 $v_t$。
+​	估计当前帧 $x_t$和前一重构帧 $\hat{x}_{t-1}$ 之间的运动信息，得到每个块对应的运动矢量 $v_t$。
 
-​	**Setp 2. 运动补偿**	
+​	**Setp 2. 运动补偿**
 ​	基于 **Step 1**中定义的运动矢量 $v_t$，通过将前一重构帧中的对应像素复制到当前帧来获得预测帧 $\bar{x}_t$ 。原始帧 $x_t$ 与预测帧 $\bar{x}_t$之间的残差为 $r_t = x_t - \bar{x}_t$ 。
 
 ​	**Step 3. 变换与量化**
@@ -77,14 +70,14 @@ $$
 ​	**Step 6. 帧重构**
 ​	**Step 2**中的预测帧 $\bar{x}_t$ 和 **Step 4**中的重构残差 $\hat{r}_t$相加，$\hat{x}_t = \bar{x}_t + \hat{r}_t$ ,获得重构帧。$\hat{x}_t$ 将被用于第 $t+1$ 步的运动估计。
 
-​	解码器端：根据发送到解码器端的 $v_t$ 和 $\hat{y}_t$ ，在Step 2中进行运动补偿，得到 $\bar{x}_t$， 并在  **Step 4** 中对 $\hat{y_t}$ 反量化得到 $\hat{r_t}$，然后在**Step 6** 中进行帧重构获得 $\hat{x_t}$ .
+​	解码器端：根据发送到解码器端的 $v_t$ 和 $\hat{y}_t$ ，在Step 2中进行运动补偿，得到 $\bar{x}_t$，并在  **Step 4** 中对 $\hat{y_t}$ 反量化得到 $\hat{r_t}$，然后在**Step 6** 中进行帧重构获得 $\hat{x_t}$ .
 
 ### Proposed Mehtod
 
 ​	相较于传统压缩模型，采用CNN估计光流获取运动信息 $v_t$ , 并采用MV编解码器来压缩编码光流值。两种算法框架差异和关系如下：
 
 ​	**Step N1.  运动估计与压缩**
-​	采用CNN[Optical Flow Estimation using a Spatial Pyramid Network]估计光流值 $v_t$，并通过MV编解码器进行计算。
+​	采用CNN[Optical Flow Estimation using a Spatial Pyramid Network]估计光流值 $v_t$；设计一个MV自编码器[End-to-end optimized image compression. 2016]压缩运动信息 $v_t$。
 $$
 v_t \stackrel{encoder}{\longrightarrow} m_t \stackrel{quantization}{\longrightarrow} \hat{m}_t \stackrel{decoder}{\longrightarrow} \hat{v}_t
 $$
@@ -145,7 +138,7 @@ $$
 
 ### Motion Compensation Network
 
-​	给定前一重构帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$，运动补偿网络获得预测帧 $\hat{x}_t$。为了消除伪影，将变换帧 $w(\hat{x}_{t-1},\hat{v}_t)$，参考帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$ 连接起来输入一个CNN中。基于像素级的运动补偿可以有效避免了传统的基于块的运动补偿方法中的块效应。
+​	给定前一重构帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$，运动补偿网络获得预测帧 $\hat{x}_t$。为了消除伪影，将变换帧 $warp(\hat{x}_{t-1},\hat{v}_t)$，参考帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$ wrap操作输入一个CNN中。基于像素级的运动补偿可以有效避免了传统的基于块的运动补偿方法中的块效应。
 
 <img src="https://img-blog.csdnimg.cn/2020101017145968.png#pic_center" style="zoom:67%;" />
 
@@ -167,8 +160,8 @@ $$
 $$
 \lambda D + R = \lambda d(x_t, \hat{x}_t) + (H(\hat{m}_t) + H(\hat{y}_t))
 $$
-​	$d(x_t, \hat{x}_t)$ 表示 $x_t, \hat{x}_t$ 之间的失真，采用 MSE实现。
-​	$H(·)$ 表示用于编码的bit数。
+​	$d(x_t, \hat{x}_t)$ 表示 $x_t, \hat{x}_t$ 之间的失真，采用 MSE评估。
+​	$H(·)$ 表示用于编码的比特数。
 ​	$\lambda$ 是拉格朗日乘数，决定number of bits 和 distortion之间的权衡。
 
 **量化** 
@@ -185,8 +178,12 @@ $$
 
 ### Setup
 
-**评估指标** PSNR，MS-SSIM
+**评估指标：** PSNR，MS-SSIM
 
-**Detail** 使用不同 $\lambda$ (256, 512, 1024, 2048) , adam优化器，初始学习率0.0001，损失趋于稳定时，学习率除以10. 训练图像 256 $\times$ 256 .
+**Detail：** 使用不同 $\lambda$ (256, 512, 1024, 2048) , adam优化器，初始学习率0.0001，损失趋于稳定时，学习率除以10. 训练图像 256 $\times$ 256 .
 
+### Results
+
+**H.264：**以 PSNR 和 MS-SSIM 为测度时，DVC性能优于H.264；
+**H.265：**以 MS-SSIM 为测度时，DVC优于H.265。
 
