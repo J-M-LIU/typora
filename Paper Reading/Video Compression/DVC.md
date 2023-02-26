@@ -77,7 +77,7 @@ $$
 ​	相较于传统压缩模型，采用CNN估计光流获取运动信息 $v_t$ , 并采用MV编解码器来压缩编码光流值。两种算法框架差异和关系如下：
 
 ​	**Step N1.  运动估计与压缩**
-​	采用CNN[Optical Flow Estimation using a Spatial Pyramid Network]估计光流值 $v_t$；设计一个MV自编码器[End-to-end optimized image compression. 2016]压缩运动信息 $v_t$。
+​	采用CNN[^1]估计光流值 $v_t$；设计一个MV自编码器[^2]压缩运动信息 $v_t$。
 $$
 v_t \stackrel{encoder}{\longrightarrow} m_t \stackrel{quantization}{\longrightarrow} \hat{m}_t \stackrel{decoder}{\longrightarrow} \hat{v}_t
 $$
@@ -85,7 +85,7 @@ $$
 ​	基于 **Step N1**中获得的光流 $\hat{v}_t$ ，通过运动补偿获得预测帧 $\bar{x}_t$ 。原始帧 $x_t$ 与预测帧 $\bar{x}_t$之间的残差为 $r_t = x_t - \bar{x}_t$ 。
 
 ​	**Step N3-N4. 变换，量化与反变换**
-​	使用非线性的变换替代了 **Step 3**中的线性变换。
+​	使用非线性变换[^3]替代了 **Step 3**中的线性变换。并通过在训练阶段**加入均匀噪声来代替量化运算**[^1]。以 $y_t$ 为例，训练阶段的量化表示 $\hat{y}_t$ 是通过在 $y_t$ 上加上均匀噪声 $\eta$ 来近似得到的，即 $\hat{y}_t = y_t + \eta$ ；在推理阶段，四舍五入取整，即 $\hat{y}_t = round(y_t)$ .
 
 ​	**Step N5. 熵编码**
 ​	**Step N1**中的量化运动信息 $\hat{m}_t$ 和 **Step N3**中的残差量化结果 $\hat{y}_t$ 熵编码后发送到解码器端。
@@ -95,9 +95,7 @@ $$
 
 
 
-### Motion Estimation
-
-参考 Optical Flow Estimation using a Spatial Pyramid Network.
+### Motion Estimation[^1]
 
 在DVC基础上改进：pyramid估计光流和整个压缩系统联合优化。下图右侧为联合优化重建光流，在人体等较为平滑的区域像素零值更多，更易于压缩。
 
@@ -105,7 +103,7 @@ $$
 
 
 
-### MV Encoder and Decoder Network
+### MV Encoder and Decoder Network[^2]
 
 ​	MV编解码器采用了一种自编码风格的网络。
 
@@ -113,15 +111,13 @@ $$
 
 **Auto-Encoder Network [End-to-end optimized image compression. 2016]**
 
-​	作者在这篇文章中提出了一种端到端的图像压缩框架，它由analysis transform、均匀量化器和synthesis transform组成。它的analysis transform过程包含三个重复的阶段，每个阶段包括卷积线性滤波器以及非线性激活函数；在这里，联合非线性用来实现局部增益控制。通过将原来不可导的量化函数替代为连续的proxy function，就可以采用SGD在训练集上联合的优化整个模型的率失真性能。在特定的情况下，松弛的损失函数可以看做通过VAE生成模型的对数似然。实验证明，在PSNR或者MS-SSIM的测量标准下，端到端的方法显著优于JPEG以及JPEG-2000算法。
+​	作者在这篇文章中提出了一种端到端的图像压缩框架，它由非线性分析变换（编码器）、均匀量化器和非线性综合变换（解码器）组成。它的analysis transform过程包含三个重复的阶段，每个阶段包括卷积线性滤波器以及非线性激活函数；在这里，联合非线性用来实现局部增益控制。通过将原来不可导的量化函数替代为连续的proxy function，就可以采用SGD在训练集上联合的优化整个模型的率失真性能。在特定的情况下，松弛的损失函数可以看做通过VAE生成模型的对数似然。实验证明，在PSNR或者MS-SSIM的测量标准下，端到端的方法显著优于JPEG以及JPEG-2000算法。
 
 ​	为了压缩图像，需要对图像进行量化，然而量化同时也会带来图形的失真，所以需要在图像的大小（离散熵）和量化误差（失真）之间做平衡。
 
 ​	由于在高维空间中对图像做量化困难，所以有损压缩通常采用变换编码形式，将图像转换到合适的空间做处理，如图所示：
 
 <img src="https://img-blog.csdnimg.cn/202012042010161.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQyMjgxNDI1,size_16,color_FFFFFF,t_70" style="zoom:67%;" />
-
-<center>Fig. 非线性变换编码框架</center>
 
 ​	$\mathbf{x}$与 $\mathbf{\hat{x}}$ 分别表示输入的原图和经过编解码器后的重建图片。$g_a$表示编码器提供的非线性变换 $\mathbf{y} = g_a(\mathbf{x},\phi)$，$\mathbf{y}$量化得到 $q$ 后，反量化/重建得到 $\hat{y}$ ，再通过 $g_s$ 解码器重建图片结果。
 ​	估计得到 $R$ (码率) ,计算原图$\mathbf{x}$与 $\mathbf{\hat{x}}$ 的失真得到 $D$，D的度量指标如PSNR,MS-SSIM，或者其他感知域如 VMAF 等。对$R$ 和 $D$ 进行**率失真联合优化**，定义损失函数为：
@@ -140,19 +136,19 @@ $$
 
 ​	给定前一重构帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$，运动补偿网络获得预测帧 $\hat{x}_t$。为了消除伪影，将变换帧 $warp(\hat{x}_{t-1},\hat{v}_t)$，参考帧 $\hat{x}_{t-1}$ 和运动矢量 $\hat{v}_t$ wrap操作输入一个CNN中。基于像素级的运动补偿可以有效避免传统的基于块的运动补偿方法导致的块效应。
 
-<img src="https://img-blog.csdnimg.cn/2020101017145968.png#pic_center" style="zoom:67%;" />
+<img src="https://img-blog.csdnimg.cn/2020101017145968.png#pic_center" style="zoom:75%;" />
 
-​	**运动补偿CNN结构** 
+​	**运动补偿CNN结构**
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20221024095332005.png" alt="image-20221024095332005" style="zoom:30%;" />
 
-### Residual Encoder and Decoder Network
+### Residual Encoder and Decoder Network[^3]
 
-参考 Variational image compression with a scale hyperprior.
+​	原始帧 $x_t$ 和预测帧 $\bar{x}_t$ 之间的残差 $r_t$ 由残差编码器编码，如图7所示。利用高度非线性[^3]的神经网络，将残差转化为相应的隐表示。与传统视频压缩系统中的DCT相比，该方法能更好地利用非线性变换的优势，获得更高的压缩效率。
 
-将残差信息 $r_t$ 通过非线性网络(Variational image compression with a scale hyperprior) 进行编码/压缩。
+<img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20230210234918950.png" alt="image-20230210234918950" style="zoom:40%;" />
 
-
+​	图7为超先验模型的网络结构。左边显示了图像自编码器架构，右边对应于实现超先验的自编码器。因子分解先验模型使用相同的结构进行分析和综合变换 $g_a$ 和 $g_s$。Q表示量化，AE、AD分别表示算术编码器和算术解码器。卷积参数表示为：滤波器个数×核支持高度×核支持宽度/下或上采样步幅，其中↑表示上采样，↓表示下采样。N和M的选择取决于λ，N = 128，M = 192(5 λ lower values)，N = 192，M = 320(3 λ higher values)。
 
 ### Training Strategy
 
@@ -166,11 +162,11 @@ $$
 
 **量化** 
 
-​	量化后会导致梯度几乎处处为0，无法训练。这里通过在训练阶段**加入均匀噪声来代替量化运算**。以 $y_t$ 为例，训练阶段的量化表示 $\hat{y}_t$ 是通过在 $y_t$ 上加上均匀噪声 $\eta$ 来近似得到的，即 $\hat{y}_t = y_t + \eta$ ；在推理阶段，四舍五入取整，即 $\hat{y}_t = round(y_t)$ .
+​	量化后会导致梯度几乎处处为0，无法训练。这里通过在训练阶段**加入均匀噪声来代替量化运算**[^1]。以 $y_t$ 为例，训练阶段的量化表示 $\hat{y}_t$ 是通过在 $y_t$ 上加上均匀噪声 $\eta$ 来近似得到的，即 $\hat{y}_t = y_t + \eta$ ；在推理阶段，四舍五入取整，即 $\hat{y}_t = round(y_t)$ .
 
 **比特率估计**
 
-参考 Variational image compression with a scale hyperprior.
+​	为了在码率和失真两方面联合优化，需要获取运动信息和残差的隐表示 $\hat{m}_t$ 和 $\hat{y}_t$  的比特率。比特率的正确度量是对应的隐表示的熵。因此，我们可以估计 $\hat{m}_t$ 和 $\hat{y}_t$ 的概率分布，从而得到对应的熵。在本文中，采用CNN[^3]来估计$\hat{m}_t$ 和 $\hat{y}_t$ 的概率分布。
 
 
 
@@ -178,7 +174,9 @@ $$
 
 ### Setup
 
-**评估指标：** PSNR，MS-SSIM
+**数据集**：训练使用Vimeo-90k数据集[^4]，该数据集为评估不同的视频处理任务构建，如视频去噪和视频超分辨,由89800个内容不同的独立片段组成。测试使用UVG数据集[^5]和HEVC标准测试序列(B类，C类，D类和E类)[^6]进行测试评估。这些数据集的内容和分辨率是多样化的，被广泛用于衡量视频压缩算法的性能。
+
+**评估指标：** PSNR，MS-SSIM，使用bpp(bits per pixel)表示每像素所需的比特数。
 
 **Detail：** 使用不同 $\lambda$ (256, 512, 1024, 2048) , adam优化器，初始学习率0.0001，损失趋于稳定时，学习率除以10. 训练图像 256 $\times$ 256 .
 
@@ -187,3 +185,14 @@ $$
 **H.264：**以 PSNR 和 MS-SSIM 为测度时，DVC性能优于H.264；
 **H.265：**以 MS-SSIM 为测度时，DVC优于H.265。
 
+
+
+## 参考文献
+
+[^1]:A. Ranjan and M. J. Black. **Optical flow estimation using a spatial pyramid network.** In *CVPR*, volume 2, page 2. IEEE, 2017. 3, 6
+[^2]:J. Balle ́, V. Laparra, and E. P. Simoncelli. **End- to-end optimized image compression.** 
+[^3]:J.Balle ́, D.Minnen, S.Singh, S.J.Hwang, and N.Johnston. Variational image compression with a scale hyperprior.
+
+[^4]:T. Xue, B. Chen, J. Wu, D. Wei, and W. T. Freeman. **Video enhancement with task-oriented flow. http://toflow.csail.mit.edu/**
+[^5]:Ultra video group test sequences. **http://ultravideo.cs.tut.fi.**
+[^6]:G. J. Sullivan, J.-R. Ohm, W.-J. Han, T. Wiegand, et al. **Overview of the high efficiency video coding(hevc) standard.**

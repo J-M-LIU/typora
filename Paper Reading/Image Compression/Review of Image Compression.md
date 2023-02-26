@@ -15,7 +15,7 @@
 <img src="https://pic2.zhimg.com/80/v2-c411bfca55bec3f85591ab9b866598e5_1440w.webp" style="zoom:30%;" />
 
 - 预测编码
-- 统计编码
+- 统计编码/熵编码
 - 变换编码
 - 混合编码
 
@@ -36,8 +36,6 @@ SSIM
 MS-SSIM
 
 
-
-end-to-end optimized image compression: GDN
 
 
 

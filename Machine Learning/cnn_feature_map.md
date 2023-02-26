@@ -45,7 +45,7 @@
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/70-20220913172058152.png" alt="img" style="zoom:50%;" />
 
-![img](https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/70-20220913172132070.png)
+<img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/70-20220913172132070.png" alt="img" style="zoom:75%;" />
 
 ### 卷积核的运算过程
 
@@ -54,5 +54,6 @@
 那么我们需要32个卷积核，每一个的尺寸为5x5x3（最后的3就是原图的rgb位深3），每一个卷积核的每一层是5x5（共3层）分别与原图的每层224x224卷积，然后将得到的三张新图叠加（算术求和），变成一张新的feature map。 每一个卷积核都这样操作，就可以得到32张新的feature map了。  也就是说：
 
 不管输入图像的深度为多少，经过一个卷积核（filter），最后都通过下面的公式变成一个深度为1的特征图。不同的filter可以卷积得到不同的特征，也就是得到不同的feature map。
-
-![img](https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/20171113170620654.png)
+$$
+a_{i,j} = f(\sum_{d=0}^{D-1}\sum_{m=0}^{F-1}\sum_{n=0}^{F-1} w_{d,m,n} x_{d,i+m,j+n} + w_b)
+$$
