@@ -48,10 +48,8 @@ $$
 读取样本 $X$，其中特征数量为$d$，批量大小为$n$，假设输出有$q$个类别，则网络输出有$q$个类别，那么小批量样本的特征为$X\in R^{n\times d}$, 权重为 $W \in R^{d\times q}$ , 偏置为 $b\in R^{1\times q}$ ，输出为 $O \in R^{n\times q}$, $O_{nq}$的一行代表一个样本的权重输出，预测值$\hat{Y}\in R^{n\times q}$，$\hat{Y}_{n\times q}$的一行代表一个样本在各个类别的预测概率值，共有$n$个样本。softmax回归的矢量计算表达式为:
 
 $$
-\begin{aligned}
 O = XW+b\\
 \hat{Y}=softmax(O) = softmax(XW+b)
-\end{aligned}
 $$
 
  $X$中一行代表一个样本，每一行为d个输入特征.
