@@ -11,6 +11,25 @@
 - [x] group conv 分组卷积
 - [x] Depthwise separable conv 深度可分离卷积
 
+### 主动学习
+
+### 对比学习
+
+### 持续学习
+
+### 强化学习
+
+### Prompt Engineering
+
+### 增量学习
+
+### 生成模型
+
+- [ ] GAN
+- [ ] VAE
+- [ ] Flow-Based Model
+- [ ] Diffusion Model
+
 
 
 ## 量化
@@ -36,6 +55,8 @@
 
 ### 零样本 etc.
 
+### Vector Quantization
+
 ## 网络结构搜索 Network Structure Search NAS
 
 
@@ -58,3 +79,5 @@
 - [ ] GhostNet
 - [ ] WeightNet
 - [ ] MicroNet
+
+

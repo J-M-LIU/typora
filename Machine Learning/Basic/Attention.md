@@ -44,7 +44,7 @@ $$
 选择不同的注意力评分函数s会导致不同的注意力汇聚操作.
 
 阶段1：Query与每一个Key计算相似性得到相似性评分 s；
-阶段2：将s评分进行softmax转换成[0,1]之间的概率分布；
+阶段2：对s评分进行softmax转换成[0,1]之间的概率分布；
 阶段3：将[a1,a2,a3…an]作为权值矩阵对Value进行加权求和得到最后的Attention值。
 
 <img src="https://img-blog.csdnimg.cn/20200322210257300.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1RpbmsxOTk1,size_16,color_FFFFFF,t_70" style="zoom:90%;" />

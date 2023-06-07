@@ -7,13 +7,13 @@
 ​	在本文中，提出了一个深度上下文(deep contextual)视频压缩框架，以实现从预测编码到条件编码的范式转换。
 ​	从理论上讲，当前待编码的像素与之前所有已经重建的像素都可能有相关性。对于传统编码器，由于搜索空间巨大，使用人为制定的规则去显示地挖掘这些像素之间的相关性非常困难。因此残差编码假设当前像素只和预测帧对应位置的像素具有强相关性, 这是条件编码的一个特例。考虑到残差编码的简单性，最近的基于深度学习的视频压缩方法也大多采用残差编码，使用神经网络去替换传统编码器中的各个模块。
 ​	可知，残差编码的信息熵 大于等于 条件编码的信息熵：$H(x_t - \bar{x_t}) \geq H(x_t|\bar{x_t})$；
-​	已有的基于 auto-encoder的图像压缩，可通过 autoencoder 探索图像间的关系；本文提出构建基于条件编码的自编码器，代替残差编码。
+​	已有的基于 Auto-Encoder的图像压缩，可通过 autoencoder 探索图像间的关系；本文提出构建基于条件编码的自编码器AE，代替残差编码。
 
 ## 相关工作
 
 ​	现有的深度视频压缩工作可分为非时延约束和时延约束两类。
 ​	非时延约束：参考帧可以来自未来。[Video compression through image interpolation,]中，对之前的帧和未来帧进行帧插值得到预测帧，然后进行残差编码；[Neural inter-frame compression for video coding.]则引入光流运动估计。这种编码方式会带来更大的延迟，并且会显著增加GPU的内存成本。
-​	时延约束：参考帧仅来自前一帧。DVC[DVC: an end-to-end deep video compression framework.]将传统视频编解码的模块均替换为network；[Improving deep video compression by resolutionadaptive ﬂow coding.]编码运动矢量时考虑 率失真优化。
+​	低时延约束：参考帧仅来自前一帧。DVC[DVC: an end-to-end deep video compression framework.]将传统视频编解码的模块均替换为network；[Improving deep video compression by resolutionadaptive ﬂow coding.]编码运动矢量时考虑 率失真优化。
 
 ## Proposed Method
 
@@ -44,7 +44,10 @@ $\hat{y}_t$: quantized $y_t$ (通过round操作)
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20221101162222345.png" alt="image-20221101162222345" style="zoom:40%;" />
 
+**具体流程为**：
 
+1. 通过光流估计网络得到上一重构帧 $\hat{x}_{t-1}$ 到当前帧 $x_t$ 的运动信息 $m_t$，然后encode得到编码MV $g_t$，并发送至解码端；
+2. 上一重构帧 $\hat{x}_{t-1}$ 通过特征提取网络从 pixel domain 转换到 feature domain，并与解码后到重构运动向量 $\hat{m}_t$ 进行 $warp(\hat{x}_{t-1},\hat{m}_t)$ 操作，并通过特征精调网络 context refinement 获取最终的context值 $\bar{x}_t$，对 $\bar{x}_t$ 通过 概率模型(Entropy Model)编码后，输入到解码端。
 
 
 对 latent code $y_t$ 进行量化和算数编码操作，运动信息 $m_t$ 通过MV Encoder压缩后均传送至解码器端。
@@ -53,7 +56,11 @@ $\hat{y}_t$: quantized $y_t$ (通过round操作)
 
 ### Entropy Model
 
-​	熵模型用于压缩量化隐编码 $\hat{y}_t$，HPE/HPD是超先验编码/解码器；AE/AD：算数编码/解码器。
+> 目前比较主流的深度学习图像压缩模型主要包含三个部分，编码网络（Encoder）、概率模型（Entropy Model）、解码网络（Decoder）。概率模型(Entropy Model)的作用是估计出压缩特征的熵概率模型，从而可以对压缩特征进行编解码。图像压缩中的熵概率模型一般以高斯分布作为先验，然后用模型去估计高斯分布的均值和方差，压缩特征基于该高斯分布得到的概率表用作编解码。概率模型估计得越准确，则消耗的码率越小。经过编解码后的重构 $\hat{y}$ 输入到Decoder中得到恢复的解压缩图像。现有的深度学习方法基本都是使用卷积神经网络，主要对局部相邻特征进行学习。但是在图像压缩任务中，还有一部分的全局冗余性没有被挖掘，这部分重复的特征会造成码率的重复消耗。所以，当前图像/视频压缩的关键改进点为设计更优秀的熵概率模型，在更少的压缩特征的码率消耗下提升输出图像的重建质量。
+
+
+
+熵模型用于压缩量化隐编码 $\hat{y}_t$，HPE/HPD是超先验编码/解码器；AE/AD：算数编码/解码器。
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20221106111824239.png" alt="image-20221106111824239" style="zoom:40%;" />
 

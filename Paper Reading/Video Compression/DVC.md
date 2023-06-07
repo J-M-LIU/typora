@@ -77,7 +77,7 @@ $$
 ​	相较于传统压缩模型，采用CNN估计光流获取运动信息 $v_t$ , 并采用MV编解码器来压缩编码光流值。两种算法框架差异和关系如下：
 
 ​	**Step N1.  运动估计与压缩**
-​	采用CNN[^1]估计光流值 $v_t$；设计一个MV自编码器[^2]压缩运动信息 $v_t$。
+​	采用CNN[^1]估计光流值 $v_t$；**设计一个MV自编码器[^2]压缩运动信息 $v_t$。**
 $$
 v_t \stackrel{encoder}{\longrightarrow} m_t \stackrel{quantization}{\longrightarrow} \hat{m}_t \stackrel{decoder}{\longrightarrow} \hat{v}_t
 $$
@@ -88,7 +88,7 @@ $$
 ​	使用非线性变换[^3]替代了 **Step 3**中的线性变换。并通过在训练阶段**加入均匀噪声来代替量化运算**[^1]。以 $y_t$ 为例，训练阶段的量化表示 $\hat{y}_t$ 是通过在 $y_t$ 上加上均匀噪声 $\eta$ 来近似得到的，即 $\hat{y}_t = y_t + \eta$ ；在推理阶段，四舍五入取整，即 $\hat{y}_t = round(y_t)$ .
 
 ​	**Step N5. 熵编码**
-​	**Step N1**中的量化运动信息 $\hat{m}_t$ 和 **Step N3**中的残差量化结果 $\hat{y}_t$ 熵编码后发送到解码器端。
+​	**Step N1**中的编码量化运动信息 $\hat{m}_t$ 和 **Step N3**中的残差量化结果 $\hat{y}_t$ 熵编码后发送到解码器端。
 
 ​	**Step N6. 帧重构**
 ​	**Step N2**中的预测帧 $\bar{x}_t$ 和 **Step N4**中的重构残差 $\hat{r}_t$相加，$\hat{x}_t = \bar{x}_t + \hat{r}_t$ ,获得重构帧。$\hat{x}_t$ 将被用于第 $t+1$ 步的运动估计。
@@ -119,7 +119,7 @@ $$
 
 <img src="https://img-blog.csdnimg.cn/202012042010161.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQyMjgxNDI1,size_16,color_FFFFFF,t_70" style="zoom:67%;" />
 
-​	$\mathbf{x}$与 $\mathbf{\hat{x}}$ 分别表示输入的原图和经过编解码器后的重建图片。$g_a$表示编码器提供的非线性变换 $\mathbf{y} = g_a(\mathbf{x},\phi)$，$\mathbf{y}$量化得到 $q$ 后，反量化/重建得到 $\hat{y}$ ，再通过 $g_s$ 解码器重建图片结果。
+​	图4为非线性变换编码框架。$x$ 与 $\hat{x}$ 分别代表输入的原图和经过编解码器后的重建图片。$g_a$表示编码器提供的非线性分析变换，$y$ 是由输入图片经过编码器网络后得到的潜在特征，通过量化器 $q$ 后，得到量化后结果 $ \hat{y}$ ，再通过 $g_s$ 解码器重建图片结果。其中，通过对 $y$ 的码率估计得到 $R$，计算原图 $x$ 与 $\hat{x}$ 的失真得到 $D$，$g_p$ 是指一种失真变换，可以将原图和重建图进行通过 $g_p$ 转化到感知空间上进行计算， $\hat{z} = g_p(\hat{x})$ ，并评估失真 $D=d(z,\hat{z})$ ，例如PSNR、MS-SSIM或其他感知域如 VMAF 等。通过得到的 $R$ 和 $D$ 进行率失真联合优化，定义损失函数为： $L=λ⋅D+R$ 通过 $\lambda$ 参数进行码率的选择控制，$\lambda$ 大则训练得到的模型的重建图失真，而压缩后的码流大，反之亦然。
 ​	估计得到 $R$ (码率) ,计算原图$\mathbf{x}$与 $\mathbf{\hat{x}}$ 的失真得到 $D$，D的度量指标如PSNR,MS-SSIM，或者其他感知域如 VMAF 等。对$R$ 和 $D$ 进行**率失真联合优化**，定义损失函数为：
 $$
 L = \lambda \ · D + R
@@ -164,7 +164,7 @@ $$
 
 ​	量化后会导致梯度几乎处处为0，无法训练。这里通过在训练阶段**加入均匀噪声来代替量化运算**[^1]。以 $y_t$ 为例，训练阶段的量化表示 $\hat{y}_t$ 是通过在 $y_t$ 上加上均匀噪声 $\eta$ 来近似得到的，即 $\hat{y}_t = y_t + \eta$ ；在推理阶段，四舍五入取整，即 $\hat{y}_t = round(y_t)$ .
 
-**比特率估计**
+**比特率估计/熵概率模型 Entropy Model**
 
 ​	为了在码率和失真两方面联合优化，需要获取运动信息和残差的隐表示 $\hat{m}_t$ 和 $\hat{y}_t$  的比特率。比特率的正确度量是对应的隐表示的熵。因此，我们可以估计 $\hat{m}_t$ 和 $\hat{y}_t$ 的概率分布，从而得到对应的熵。在本文中，采用CNN[^3]来估计$\hat{m}_t$ 和 $\hat{y}_t$ 的概率分布。
 
@@ -191,7 +191,7 @@ $$
 
 [^1]:A. Ranjan and M. J. Black. **Optical flow estimation using a spatial pyramid network.** In *CVPR*, volume 2, page 2. IEEE, 2017. 3, 6
 [^2]:J. Balle ́, V. Laparra, and E. P. Simoncelli. **End- to-end optimized image compression.** 
-[^3]:J.Balle ́, D.Minnen, S.Singh, S.J.Hwang, and N.Johnston. Variational image compression with a scale hyperprior.
+[^3]:J.Balle ́, D.Minnen, S.Singh, S.J.Hwang, and N.Johnston. **Variational image compression with a scale hyperprior.**
 
 [^4]:T. Xue, B. Chen, J. Wu, D. Wei, and W. T. Freeman. **Video enhancement with task-oriented flow. http://toflow.csail.mit.edu/**
 [^5]:Ultra video group test sequences. **http://ultravideo.cs.tut.fi.**
