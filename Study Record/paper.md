@@ -36,11 +36,7 @@ Zero-Q
 
 
 
-
-
 ##  Transformer
-
-
 
 
 
@@ -48,4 +44,3 @@ Zero-Q
 
 ## Video Compression
 
- 

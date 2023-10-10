@@ -46,7 +46,7 @@
 
 ### QAT
 
-- [ ] lsq & lsq+
+- [x] lsq & lsq+
 - [ ] PACT
 - [ ] Dorefa-Net
 - [ ] LQ-Nets
@@ -79,5 +79,4 @@
 - [ ] GhostNet
 - [ ] WeightNet
 - [ ] MicroNet
-
 

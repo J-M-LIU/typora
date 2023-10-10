@@ -6,7 +6,7 @@
 
 
 
-<img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20220920104010534.png" alt="image-20220920104010534" style="zoom:40%;" />
+<img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20220920104010534.png"  style="zoom:40%;" />
 
 ### 从线性到非线性
 
