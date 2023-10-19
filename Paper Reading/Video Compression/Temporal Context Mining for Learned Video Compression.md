@@ -17,11 +17,9 @@
 
 - 提出了一个**时态上下文挖掘（TCM）模块**，以学习更丰富、更准确的时态上下文。考虑到学习单尺度上下文可能无法很好地描述时空非均匀性，TCM模块采用了分层结构来生成多尺度时态上下文。
 - 提出了时态上下文重新填充（TCR）的方法；
-- 不使用自回归熵模型，构建一个并行化友好的解码器，实现了更高的压缩比。（自回归熵模型可以提高压缩比，但会大大增加解码时间。）
+- 相比于DCVC，本文的entropy model中不使用auto regressive 熵模型（自回归熵模型可以提高压缩比，但会大大增加解码时间，不利于并行化）使用`hyper prior model`[Variational image compression with a scale hyperprior]学习层次先验，并结合temporal prior。
 
 ## Methodology
-
-
 
 ![image-20231007220706592](https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20231007220706592.png)
 
@@ -33,9 +31,9 @@
 
 1. 使用具有$L$ 个级别的特征提取模块从传播的特征$F_{t-1}$生成多尺度特征$F_{t-1}^l$。该模块由卷积层和残差块组成。
 
-  $$
+$$
   F_{t-1}^l=extract(F_{t-1}),l=0,1,2
-  $$
+$$
 
 2. 解码的MV $\hat{v}_t$ 使用双线性滤波器进行down sample, 生成多尺度MV $\hat{v}_t^l$, 其中 $\hat{v}_t^0$ 被设置为 $\hat{v}_t$ 。
     注意, 每个下采样的MV都被除以2。然后, 对MV $\hat{v}_t^l$ 和多尺度特征$F_{t-1}$ 进行warp操作。

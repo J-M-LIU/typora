@@ -95,7 +95,7 @@ $f_{hp}(f_{hp}(z_t))$、$f_{ar}(\hat{y}_{i,t})$ 和$f_{tp}(z_t)$ 提供了空间
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20221106111824239.png" alt="image-20221106111824239" style="zoom:40%;" />
 
-​	熵模型中使用了3个先验：使用`hyper prior model`[Variational image compression with a scale hyperprior]来学习层次先验，并使用`auto regressive network`[Joint autoregressive and hierarchical priors for learned image compression]来学习空间先验。这两种先验常用于图像压缩。latent codes也有时间上的关联性，因此设计了一个时间先验编码器来探索时间相关性，生成时间先验。结果是一个融合了空间和时间上下文信息的latent code，可以用于高效的编码和解码。
+​	熵模型中使用了3个先验：使用`hyper prior model`[Variational image compression with a scale hyperprior]来学习层次先验，使用`auto regressive network`[Joint autoregressive and hierarchical priors for learned image compression]来学习空间先验。这两种先验常用于图像压缩。latent codes也有时间上的关联性，因此设计了一个时间先验编码器来探索时间相关性，生成时间先验。结果是一个融合了空间和时间上下文信息的latent code，可以用于高效的编码和解码。
 
 
 
