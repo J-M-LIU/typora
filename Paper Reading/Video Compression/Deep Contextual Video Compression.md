@@ -84,8 +84,7 @@ $U(-\frac{1}{2})^{\hat{y}i,t}$ 是Laplace分布的未归一化部分。
 $f_{hp}(f_{hp}(z_t))$、$f_{ar}(\hat{y}_{i,t})$ 和$f_{tp}(z_t)$ 提供了空间和时间的先验信息, 它们分别是hyper prior
 解码器、auto regressive network和时间先验编码器的输出。
 
-简单地说, 这个公式描述了在给定时间上下文 $z_t$ 的条件下, latent code $\hat{y}_t$ 的概率分布是如何
- 根据Laplace分布来建模的。
+简单地说, 这个公式描述了在给定时间上下文 $z_t$ 的条件下, latent code $\hat{y}_t$ 的概率分布如何是根据Laplace分布来建模的。
 
 **entropy model**
 
@@ -95,7 +94,7 @@ $f_{hp}(f_{hp}(z_t))$、$f_{ar}(\hat{y}_{i,t})$ 和$f_{tp}(z_t)$ 提供了空间
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20221106111824239.png" alt="image-20221106111824239" style="zoom:40%;" />
 
-​	熵模型中使用了3个先验：使用`hyper prior model`[Variational image compression with a scale hyperprior]来学习层次先验，使用`auto regressive network`[Joint autoregressive and hierarchical priors for learned image compression]来学习空间先验。这两种先验常用于图像压缩。latent codes也有时间上的关联性，因此设计了一个时间先验编码器来探索时间相关性，生成时间先验。结果是一个融合了空间和时间上下文信息的latent code，可以用于高效的编码和解码。
+熵模型中使用了3个先验：使用`hyper prior model`[Variational image compression with a scale hyperprior]来学习层次先验，使用`auto regressive network`[Joint autoregressive and hierarchical priors for learned image compression]来学习空间先验。这两种先验常用于图像压缩。latent codes也有时间上的关联性，因此设计了一个时间先验编码器来探索时间相关性，生成时间先验。结果是一个融合了空间和时间上下文信息的latent code，可以用于高效的编码和解码。
 
 
 

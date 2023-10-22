@@ -25,7 +25,7 @@
 
 ### Temporal Context Mining
 
-之前的条件编码方案（DCVC）：从上一个解码帧$\hat{x}_{t-1}$中提取context，但由于$\hat{x}_{t-1}$只包含3哥通道，丢失了很多信息，因此本文提出从$\hat{x}_{t-1}$生成过程中的最后一个卷积层的特征 $F_{t-1}$ 中来获取。
+之前的条件编码方案（DCVC）：从上一个解码帧$\hat{x}_{t-1}$中提取context，但由于$\hat{x}_{t-1}$只包含3个通道，丢失了很多信息，因此本文提出从$\hat{x}_{t-1}$生成过程中的最后一个卷积层的特征 $F_{t-1}$ 中来获取。
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20231009190112491.png" alt="image-20231009190112491" style="zoom:50%;" />
 
@@ -55,9 +55,9 @@ $$
 
 ### Temporal Context Re-ﬁlling
 
-**为什么要重新填充时间上下文？**在视频中，连续的帧往往具有很高的时间相关性。通过将这些时间上下文信息重新填充到编码/解码过程中，可以更好地利用这种相关性，从而实现更高效的视频压缩。
+**为什么要重新填充时间上下文？**在视频中，连续的帧往往具有很高的时间相关性。通过将这些时间上下文信息重新填充到编码/解码过程中，可以更好地利用这种相关性，从而实现更高效的视频压缩。（类比DCVC中，相似的步骤是将 $x_t$ 和 context $\bar{x}_t$ 一同送入contextual encoder中。）
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20231010121111260.png" alt="image-20231010121111260" style="zoom:50%;" />
 
-- Contextual Encoder-Decoder and Frame Generator：拼接最大scale的temporal context $\bar{C}_t^0$ 和 $x_t$，一起传入contextual encoder；拼接 $\bar{C}_t^1$ 和 $\bar{C}_t^2$ 并也传入encoder；decoder的过程与之相逆，详见 Fig. 5. 
-- **bottleneck residual block**：由于concatenation会导致通道数增加，数据维度变大，因此构建了bottlenekc残差块来降低复杂度。
+- Contextual Encoder-Decoder and Frame Generator：拼接最大scale的temporal context $\bar{C}_t^0$ 和 $x_t$，一起传入contextual encoder；拼接 $\bar{C}_t^1$ 和 $\bar{C}_t^2$ 然后也传入encoder；decoder的过程与之相逆，详见 Fig. 5. 
+- **bottleneck residual block**：由于concatenation会导致通道数增加，数据维度变大，因此构建了bottleneck残差块来降低复杂度。
