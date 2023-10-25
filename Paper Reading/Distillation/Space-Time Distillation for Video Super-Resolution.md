@@ -14,7 +14,7 @@
 
 ## Space-Time Distillation
 
-给定2k + 1个连续的LR帧 $I_{[t−k:t+k]}$，表示中间帧 $I_t$为参考帧，其他帧为相邻帧。VSR的目标是估计一个上采样的参考框架 $SR_t$，期望它接近于真实的 $HR_t$。通过精心设计的运动对齐模块，每个输入相邻帧在 feature domain 与参考帧对齐，在 spatial-tempora domain 进行聚合。$F_t^{LR}$ 表示对齐(and)/融合(or)的特征，并通过 pixelshuffel 将其送入重建主干，以估计与 $HR_t$ 具有相同空间分辨率的 $F_t^{SR}$ 。最后通过对 $F_t^{SR}$ 卷积来减少通道数得到重建 $SR_t$。**本文使用特征 $F_t^{SR}$ 而非 $F_t^{LR}$ 来进行蒸馏，根据后续的消融实验可发现，使用 $F_t^{SR}$ 可以提高重建准确度。**
+给定2k + 1个连续的LR帧 $I_{[t−k:t+k]}$，表示中间帧 $I_t$为参考帧，其他帧为相邻帧。VSR的目标是估计一个上采样的参考框架 $SR_t$，期望它接近于真实的 $HR_t$。超分辨的基本结构是：多个输入帧通过精心设计的运动对齐模块，每个输入相邻帧在 feature domain 与参考帧对齐，在 spatial-tempora domain 进行聚合。$F_t^{LR}$ 表示对齐(and)/融合(or)的特征，并通过 pixelshuffel 将其送入重建主干，以估计与 $HR_t$ 具有相同空间分辨率的 $F_t^{SR}$ 。最后通过对 $F_t^{SR}$ 卷积来减少通道数得到重建 $SR_t$。**本文使用特征 $F_t^{SR}$ 而非 $F_t^{LR}$ 来进行蒸馏，根据后续的消融实验可发现，使用 $F_t^{SR}$ 可以提高重建准确度。**
 
 ### Space Distillation（SD）
 
