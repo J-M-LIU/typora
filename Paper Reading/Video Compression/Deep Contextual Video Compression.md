@@ -42,7 +42,7 @@ $\hat{y}_t$: quantized $y_t$ (通过round操作)
 
 传到解码器端: 
 运动信息(quant_mv), 运动先验信息(compressed_z_mv);
-context信息(compressed_y_renorm), context先验信息(compressed_z)
+context信息(compressed_y_renorm), context先验信息(compressed_z）
 
 对当前帧的encode和decode都基于 context值 $\bar{x}_t$，而 $x_t$ 与 $\bar{x}_t$ 的关系通过网络自适应地学习得到，而非以往通过相减操作得到残差 $r_t = x_t - \bar{x}_t$。
 
