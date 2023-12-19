@@ -49,3 +49,48 @@ $$
 
 <img src="https://img-blog.csdnimg.cn/20200322210257300.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1RpbmsxOTk1,size_16,color_FFFFFF,t_70" style="zoom:90%;" />
 
+## Self-Attention
+
+自注意力机制是注意力机制的变体，其减少了对外部信息的依赖，更擅长捕捉数据或特征的内部相关性。自注意力不需要外部信息，直接计算同层特征的交互关系，比如输入一个句子就直接计算这个句子中的单词之间的相关性，即Q、K、V三个矩阵都是由句子本身产生的；传统的注意力则用其他东西作为query，如RNN中使用的注意力就是把前一个时间的输出作为query和当前的输入计算相关性（相当于对于前面的输入产生的历史信息和当前的输入进行加权，判断哪些信息更重要）
+
+自注意力机制在文本中的应用，主要是通过计算单词间的互相影响，来解决长距离依赖问题。
+
+自注意力机制的计算过程：
+
+1. 将输入单词转化成嵌入向量；
+
+2. 根据嵌入向量得到q，k，v三个向量；
+
+3. 为每个向量计算一个score：$score =q · k$ ；
+
+4. 为了梯度的稳定，Transformer使用了score归一化，即除以 $\sqrt{d_k}$ ；
+
+5. 对score施以softmax激活函数；
+
+6. softmax点乘Value值v，得到加权的每个输入向量的评分v；
+
+7. 相加之后得到最终的输出结果z ：$z=\sum{v}$。
+
+接下来我们详细看一下self-attention，其思想和attention类似，但是self-attention是Transformer用来将其他相关单词的“理解”转换成我们正在处理的单词的一种思路，例如：The animal didn't cross the street because it was too tired 这里的it到底代表的是animal还是street呢，对于机器来说很难判断，self-attention就能够让机器把it和animal联系起来，接下来我们看下详细的处理过程。
+
+1. 首先，self-attention会计算出三个新的向量，在论文中，向量的维度是512维，我们把这三个向量分别称为Query、Key、Value，这三个向量是用embedding向量与一个矩阵相乘得到的结果，这个矩阵是随机初始化的，维度为（64，512）注意第二个维度需要和embedding的维度一样，其值在BP的过程中会一直进行更新，得到的这三个向量的维度是64低于embedding维度的。
+
+<img src="https://pic3.zhimg.com/80/v2-e473200fb3a2a00ce7467967d174ac76_1440w.webp" style="zoom:70%;" />
+
+2. 计算self-attention的分数值，该分数值决定了当我们在某个位置encode一个词时，对输入句子的其他部分的关注程度。这个分数值的计算方法是Query与Key做点乘，以下图为例，首先我们需要针对Thinking这个词，计算出其他词对于该词的一个分数值，首先是针对于自己本身即q1·k1，然后是针对于第二个词即q1·k2；
+
+<img src="https://pic3.zhimg.com/80/v2-8d98509cd1e0c7f72a0555c00cb8da06_1440w.webp" style="zoom:70%;" />
+
+3. 接下来，把点成的结果除以一个常数来进行归一化，这个值一般是采用上文提到的矩阵的第一个维度的开方即64的开方8，然后把得到的结果做softmax计算。得到的结果即是每个词对于当前位置的词的相关性大小。
+
+<img src="https://pic3.zhimg.com/80/v2-41384c3fad61e1943466f5b6d2476c0a_1440w.webp" style="zoom:70%;" />
+
+4. 把Value和softmax得到的值进行相乘，并相加，得到的结果即是self-attetion在当前节点的值
+
+<img src="https://pic2.zhimg.com/80/v2-87c41175e574e446b19334520f76b9bd_1440w.webp" style="zoom:70%;" />
+
+在实际的应用场景，为了提高计算速度，我们采用的是矩阵的方式，直接计算出Query, Key, Value的矩阵，然后把embedding的值与三个矩阵直接相乘，把得到的新矩阵Q与K相乘，乘以一个常数，做softmax操作，最后乘上V矩阵。
+
+<img src="https://pic4.zhimg.com/80/v2-3650acdf0c697e29aed2e0f01883cf2f_1440w.webp" style="zoom:67%;" />
+
+<img src="https://pic2.zhimg.com/80/v2-dcfba816ac275f0902934c1788d3ee75_1440w.webp" style="zoom:67%;" />
