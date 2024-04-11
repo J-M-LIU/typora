@@ -8,7 +8,7 @@ Deep neural networks have recently achieved great success in neural video compre
 
 ## Introduction
 
-
+ 
 
 With the rapid evolution of digital media technology, video has become a predominant internet data format. Efficient video encoding is vital for optimizing bandwidth and storage, particularly in online streaming, conferencing, and digital TV.
 
@@ -126,44 +126,24 @@ $$
 
 
 
-### Dynamic Bit-width Allocation
+### Feature Dynamic Quantization
 
-参与决策的条件：光流复杂度、结构/纹理复杂度
+已有的工作通常没有考虑到视频片段的多样性，以及帧内的复杂性，大多数的量化bit-width分配方法通常是静态的，没有考虑到由于人眼对于帧内不同区域的关注度不同，导致所需的计算资源也是不同的。为了精确分配计算资源，我们提出动态bit-width分配，根据输入调整关键区域和非关键区域的bit-width。
 
-
-
-
-
-在我们所提出的框架中，轻量的bit allocator在K个候选的量化bit中为ROI区域和Non-ROI区域选择不同的bit-width。如图x所示。
-
-
-
-#### Feature Quantization
-
-已有的工作通常没有考虑到视频片段的多样性，以及帧内的复杂性，大多数的量化bit-width分配方法通常是静态的，没有考虑到由于人眼对于帧内不同区域的关注度不同，因此所需的计算资源也是不同的。因此我们提出动态地为不同区域采用不同的量化bit-width，以更精确的分配计算资源。假设ROI区域和Non-ROI区域均有N个不同量化bit-width候选 $b_1,b_2,...,b_N$​，bit-allocator将根据量化strategy为不同区域特征分别分配一个最优的量化bit-width。假设图像ROI区域特征被bit-allocator分配了N个candidate中的某一个bit-width，则：
+假设ROI区域和Non-ROI区域均有K个不同量化bit-width候选 $b^1,b^2,...,b^K$​​​，bit-allocator将根据量化strategy为不同区域特征分别分配一个最优的量化bit-width。每一个量化bit-width $b^k$ 对应的特征量化函数为：
 $$
-\boldsymbol{x}_q^n\equiv Q_b^n(\boldsymbol{x})=\lfloor\operatorname{clamp}(\boldsymbol{x},\alpha_n)\cdot\frac{s(b_n)}{\alpha_n}\rceil
+Q_{b^k}(\boldsymbol{x})=\lfloor\operatorname{clamp}(\boldsymbol{x},\alpha_k)\cdot\frac{s(b_k)}{\alpha_k}\rceil
 $$
-其中 $\alpha_n$表示第n个bit-width对应的scale parameter， $s(b_n) = 2^{b_n-1}$ 表示integer range of candidate candidate $b_n$ from a set of $n$ bit-width options. This process is part of a set of quantization functions, each associated with a different bit-width candidate within the set of $n$ possibilities. Bit allocator selects an optimal bit-width from multiple candidates, enabling a more flexible and potentially more efficient quantization scheme.
-
-
+其中 $\alpha^k$表示第k个bit-width对应的scale parameter， $s(b^k) = 2^{b^k-1}$ 表示integer range of $b^k$ from a set of $K$​ bit-width options. 为了实现动态的帧内区域量化，我们通过bit-allocator为每一个bit-width分配一个概率，因此ROI/Non-ROI区域的动态量化可写作：
 $$
-b_{i,j}^{k^*}=\begin{cases}\arg\max_{b_{i,j}^k}P_{b_{i,j}^k}(\boldsymbol{x}_i^j)&\text{forward,}\\\sum_{k=1}^Kb_{i,j}^k\cdot P_{b_{i,j}^k}(\boldsymbol{x}_i^j)&\text{backward,}&\end{cases}
+\boldsymbol{x}_{q}=\sum^KQ_{b^k}(\boldsymbol{x})\cdot P^{k}(\boldsymbol{x})\\
+s.t. \sum_{k=1}^KP^k(\boldsymbol{x})=1.
 $$
-
-$$
-\boldsymbol{x}_{q}=\begin{cases}Q_{b^{n^*}}(\boldsymbol{x})&\text{forward,}\\\sum_{n=1}^NQ_{b^k}(\boldsymbol{x})\cdot P^{n}(\boldsymbol{x})&\text{backward.}&\end{cases}
-$$
+其中 $P^k(\boldsymbol{x})$ 表示分配给bit-width $b^k$ 的概率。
 
 
 
-> 位宽的选择。为了方便选择位宽，我们使用一个轻量级的位选择器，为每个位宽分配一个概率。然后，选择概率最高的位宽:
->
-> 为了解决上述挑战性问题，我们采用了一个位控制器，通过识别每个输入样本的复杂性来预测所有层的权重和激活的位宽度。在实践中，位控制器将输出一个由预测logits组成的向量，表示每一层中每个位宽候选的选择概率。
->
-> 通过这种方式，我们的DQNet预测每一层的位宽，计算量可以忽略不计。在第4.4节中，我们将研究使用主量化网络的一些层对位控制器的影响。此外，比特控制器以端到端的方式与主量化网络联合训练，比特控制器将一次性生成所有后续层的比特宽度预测对数。
-
-Bit- allocator for Dynamic Quantization
+### Bit-allocator for Dynamic Quantization
 
 为了进行bit-width的选择，我们使用一个轻量的bit-allocator，通过判断图像区域特征的多种复杂性来预测其对应的bit-width，具体来说，分别为ROI区域和Non-ROI区域配置两个bit-allocator，ROI区域相比Non-ROI区域具有更高精度的bit-width候选。bit-allocator将输出由每个bit-width候选的选择概率组成的概率向量。
 
@@ -172,39 +152,15 @@ $$
 \pi(\boldsymbol{x}) = \mathrm{Softmax}{(fc(\sigma(\boldsymbol{x}),|\nabla I|))} \\
 \sum_K \pi^k(x) = 1
 $$
-~~在forward或推理过程中选择概率最大的bit-width。~~
-
-想选择概率最大的作为对应的bit-width
+bit-allocator的输出logits为 $\pi^1,\pi^2,...,\pi^k$，对于某一输入，根据argmax选定分配概率最大的量化bit-width：
 $$
-\boldsymbol{x}_{q} =\arg\max_{Q_{b^k}(\boldsymbol{x})}\pi^k(\boldsymbol{x})
+\boldsymbol{x}_{q} =Q_{b^k}(\boldsymbol{x})=\arg\max_{Q_{b^k}(\boldsymbol{x})}\pi^k(\boldsymbol{x})
 $$
-forward:
-$$
-\boldsymbol{x}_{q} =\arg\max_{Q_{b^n}(\boldsymbol{x})}P^n(\boldsymbol{x})
-$$
-
-> During both training and inference, only one bit-width will be selected for one layer as shown in Figure 3. To provide a differentiable formula for sampling argmax, we utilize the Gumbel-softmax trick during training:
-
-在训练和推理阶段
-
-backward:
-$$
-\boldsymbol{x}_{q} = \sum_{n=1}^NQ_{b^n}(\boldsymbol{x})\cdot P^{n}(\boldsymbol{x})
-$$
-
-但是从离散分布 $\pi(x)$ 的采样过程是不可微的，为了使其可微，
-
-
+但是从离散分布 $\pi(x)$ 的采样过程是不可微的，为了使优化问题完全可微，采用Gumbel-Softmax方法来提供一个采样argmax的可微公式：
 $$
 P^k(\boldsymbol{x})=\frac{\exp\left((\log\pi^k(\boldsymbol{x})+g^k)/\tau\right)}{\sum_{j\in\Omega}\exp\left((\log\pi^j(\boldsymbol{x})+g^j)/\tau\right)},
 $$
-
-
-
-
-
-
-
+$P^k(x)$ denotes the soft assignment probability of bit-width $b^k$, $g^k$ is a random noise drawn from a Gumbel(0, 1) distribution. $\tau$ is the temperature parameter which controls the discreteness of the output distribution. As $\tau$ approaches 0, the output approximates a hard max function, resulting in a vector close to onehot encoding. As $\tau$ increases, the distribution becomes more uniform, meaning the probability is more evenly spread across the candidates.
 
 
 
@@ -260,6 +216,6 @@ $$
 
 Dynamic Network Quantization for Efficient Video Inference
 
-
+参与决策的条件：光流复杂度、结构/纹理复杂度
 
 
