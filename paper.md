@@ -1,3 +1,11 @@
+# ROI-Aware Dynamic Network Quantization for Neural Video Compression
+
+
+
+## Abstract
+
+Deep neural networks have recently achieved great success in neural video compression(NVC), but due to the high complexity of deep video coding networks, NVC has not widely used in low-latency scenarios. Quantization is an effective way to reduce memory footprint and computational complexity for deep neural networks. However, existing methods overlook the unique characteristics of video frames and typically employ a fixed bit-width approach, which is suboptimal. In this paper, to achieve better frame reconstrction with lower computational complexity, we propose a ROI(Region of Interest)-aware dynamic quantization method for NVC networks that analyzes ROIs within video frames and dynamically alters the quantization strategy, allocating higher bit-widths for critical regions and lower bit-widths for less crucial areas. To this end, we present an efficient bit-allocator that adaptively determines quantization levels across different regions and frames, guided by the motion and texture complexity of the region. Experimental results conducted on 1080p standard test videos demonstrate effectiveness of the proposed dynamic quantization method.
+
 ## Introduction
 
 
@@ -245,6 +253,13 @@ $$
 
 
 ### Qualitative Results
+
+
+
+
+
+Dynamic Network Quantization for Efficient Video Inference
+
 
 
 
