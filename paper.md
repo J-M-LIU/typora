@@ -34,15 +34,21 @@ To facilitate deployment, lots of works have been proposed. Quantization is one 
 
 因此，人们在网络压缩方面做了大量工作，来实现高效的推理。量化是降低神经网络计算复杂度的有效方法之一。我们发现，针对neura video codec的模型压缩工作很少，之前有人尝试对learned image compression进行量化。比如[^1][^2]中只对模型的权重进行量化，没有考虑对激活的量化；[^3][][][][][^4][][][][][^5] 同时考虑到了权重和激活值的量化，但他们均依赖于推理时的动态量化，根据图像的实时统计信息计算量化参数，然而这样需要很高的计算开销，不适用于低延迟场景下的深度视频编码。虽然以上方法为提高深度图像编码网络在低精度下的准确性和高效性做出了巨大努力，但并不完全适用于深度视频编码网络的特性：视频片段具有多样性，以同样的bit-width处理不同的视频片段限制了模型的性能；同时由于人眼对实时视频的不同区域关注度不同，对低关注度和高关注度区域采取相同的位宽无法有效分配计算资源，导致性能下降。因此我们设想，对更高关注度区域采取更高bit-width，低关注区域使用较低精度，可在保证不牺牲人眼关注区域精度的情况下有效实现计算节省。因此，本文旨在探索一种ROI区域感知的量化方法，实现更好的计算效率和重构质量的权衡。
 
-To facilitate deployment, lots of works have been proposed. Quantization is one of the promising approaches for reducing the computational complexity of neural networks. We found little work on model compression for neura video codec and previous attempts to quantize learned image compression. For example, in [^1][^2], only the weights of the model are quantified, and the quantification of the activations is not considered. [^3][][][][][][^4][][][][][][][^5] consider both weight and activation quantization, but they all rely on dynamic quantization during inference, and calculate quantization parameters according to real-time image statistical information. However, this requires high computational overhead and is not suitable for depth video coding in low latency scenarios. Although the above methods have made great efforts to improve the accuracy and efficiency of deep image coding networks at low precision, they are not fully applicable to the characteristics of deep video coding networks: video clips are diverse, and processing different video clips with the same bit-width limits the performance of the model. At the same time, because the human eye pays different attention to different regions of real-time video, using the same bit width for low and high attention regions cannot effectively allocate computing resources, resulting in performance degradation. Therefore, we envisage that higher bit-width for higher attention regions and lower precision for low attention regions can effectively achieve computational savings without sacrificing the accuracy of the human eye attention regions. Therefore, this paper aims to explore an ROI region-aware quantization method that achieves a better trade-off between computational efficiency and reconstruction quality.
+To facilitate deployment, lots of works have been proposed to enable efficient inference. Quantization is one of the promising approaches for reducing the computational complexity of neural networks. We found little work on model compression for neura video codec and previous attempts to quantize learned image compression. For example, in [^1][^2], only the weights of the model are quantified, and the quantification of the activations is not considered. [^3][][][][][][^4][][][][][][][^5] consider both weight and activation quantization, but they all rely on dynamic quantization during inference, and calculate quantization parameters according to real-time image statistical information. However, this requires high computational overhead and is not suitable for depth video coding in low latency scenarios. Although the above methods have made great efforts to improve the accuracy and efficiency of deep image coding networks at low precision, they are not fully applicable to the characteristics of deep video coding networks: video clips are diverse, and processing different video clips with the same bit-width limits the performance of the model. At the same time, because the human eye pays different attention to different regions of real-time video, using the same bit width for low and high attention regions cannot effectively allocate computing resources, resulting in performance degradation. Therefore, we envisage that higher bit-width for higher attention regions and lower precision for low attention regions can effectively achieve computational savings without sacrificing the accuracy of the human eye attention regions. Therefore, this paper aims to explore an ROI region-aware quantization method that achieves a better trade-off between computational efficiency and reconstruction quality.
 
-#TODO
+
+
+==#TODO==
 
 本文提出一种简单的端到端网络量化方案，根据图x所示，根据输入视频片段的人眼关注度高/低区域，为不同区域动态选择量化位宽，同时兼顾高关注度区域的高质量重建和整体计算效率。具体而言，本文构建了一个轻量的bit allocator，用于决策每一帧的最佳bit分配，可以忽略其计算的开销。bit allocator实时决定每一帧中的不同区域采用什么bit-width，对高关注度区域分配更高的bit，反之对低关注度区域分配较低的bit。两个区域的特征分别传入单独进行编解码处理，在解码端完成融合并重构。对于网络权重，我们采用静态的量化方法，避免在编码端和解码端之间产生额外的量化信息传输。对于激活值，根据不同区域动态分配量化位宽，可以大大减少每个视频片段的计算量，实现效率和质量之间的更优权衡。
 
 在几个1080p standard test videos（HEVC、UVG、MCL-JCV）上进行了测试，验证了本方法的有效性。实验结果表明，保持人眼关注区域的质量同时可达到 xxx 的码率节省，并且平均减少了xxx的flops和xxx的内存。
 
+In this paper, we propose a simple end-to-end network quantization scheme, which dynamically selects  quantization bit-width for different regions according to the high/low human eye attention regions of the input video clip as shown in Figure x, while taking into account the high-quality reconstruction of the high attention regions and the overall computational efficiency. Specifically, a lightweight bit allocator is constructed to decide the best bit allocation for each frame, and the overhead of its computation can be ignored. The bit allocator determines in real time what bit-width to use for different regions in each frame, and assigns higher bits to high interest regions and lower bits to low interest regions. The features of the two regions were passed into the decoder for encoding and decoding separately, and the fusion and reconstruction were completed at the decoder. For the network weights, we adopt a static quantization method to avoid additional transmission of quantized information between the encoder and decoder. For the activation value, the dynamic allocation of quantization bit width according to different regions can greatly reduce the computation of each video segment and achieve a more optimal trade-off between efficiency and quality.
 
+Experiments on several 1080p standard test videos (HEVC, UVG, MCL-JCV) verify the effectiveness of the proposed method. Experimental results show that xxx bitrate savings can be achieved while maintaining the quality of the region of interest, and xxx flops and xxx memory are reduced on average.
+
+==#TODO==
 
 In summary, the contributions of this work are:
 
@@ -147,6 +153,8 @@ $$
 
 为了进行bit-width的选择，我们使用一个轻量的bit-allocator，通过判断图像区域特征的多种复杂性来预测其对应的bit-width，具体来说，分别为ROI区域和Non-ROI区域配置两个bit-allocator，ROI区域相比Non-ROI区域具有更高精度的bit-width候选。bit-allocator将输出由每个bit-width候选的选择概率组成的概率向量。
 
+==#TODO:==
+
 Bit-allocator由xxx组成，经由softmax进一步计算bit-width的预测概率：
 $$
 \pi(\boldsymbol{x}) = \mathrm{Softmax}{(fc(\sigma(\boldsymbol{x}),|\nabla I|))} \\
@@ -164,12 +172,42 @@ $P^k(x)$ denotes the soft assignment probability of bit-width $b^k$, $g^k$ is a 
 
 
 
+### 
+
+
+
+
+
+
+
 
 ### 伪代码
 
 
 
+Algorithm 1 The training procedure of the proposed dy- $\frac{\text{namic quantization scheme.}}{\textbf{Input: Input images Xand their labels; the trade-off pa-}}$ rameter $\alpha.$
 
+Output: The dynamic quantized neural network using oun algorithm.
+
+1: Set epochs $T$ and batch size $m$ for training DQNet
+
+2: Initialize the weights of network and bit-controller randomly and quantize the input images 
+
+3: for $t=1,\cdots,T\mathbf{do}$
+	4: Output the probability of different bit-widths for each layer using the bit-controller.
+
+​	5.Generate the one-hot vectors for selections of different bit-widths using Eq. (7).
+​	6: for $i=1,\cdots,n$ do
+​		for $j=1,\cdots,m$ do  
+
+​		Quantize $X_{i,j}$ and $W_i$ for $j^{th}$ sample in the $i^{th}$ layer according to the selection of different 		bitwidths using Eq. (5) and (6).
+
+​		end for
+​		Calculate the output of $i$-th layer using Eq. (4). 10:
+​	end for
+​	Update the entire network using back propagation d utilize Eq. (8) when up- according to Eq. 	(11) and dating the Gumbel-softmax layer.
+
+end for
 
 
 
@@ -177,7 +215,7 @@ $P^k(x)$ denotes the soft assignment probability of bit-width $b^k$, $g^k$ is a 
 
 #### Weight Quantization
 
-
+采用固定bit-width
 
 ![截屏2024-04-08 00.06.27](/Users/liujiamin/Library/Application Support/typora-user-images/截屏2024-04-08 00.06.27.png)
 
@@ -204,7 +242,15 @@ $P^k(x)$ denotes the soft assignment probability of bit-width $b^k$, $g^k$ is a 
 
 ### Experiments Setup
 
+**Datasets** training dataset是Vimeo-90K septuplet dataset，测试数据包括HEVC类B (1080P)， C (480P)， D (240P)， E (720P)来自通用测试条件，由编解码器标准社区使用。此外，还对MCL-JCV和UVG数据集的1080p视频进行了测试。
 
+**Implementation Details.** 我们的深度编码模型基于DCVC条件编码模型框架，并基于UNISAL模型生成显著性mask图，以此得到帧中的ROI区域和Non-ROI区域。受到xx的启发，我们采用渐进式训练框架，分为5个阶段进行训练。第一阶段固定其他网络模块参数，只训练ME模块参数；第二阶段开放光流预测网络模块，联合ME进行训练；第三阶段固定ME和光流预测网络，对条件编码部分网络进行训练；第4阶段开放全部网络参数，联合训练；最后一个阶段用于差错控制，连续多帧训练；
+
+**Bit-width candidates**
+
+
+
+### Ablation study
 
 
 
@@ -212,10 +258,32 @@ $P^k(x)$ denotes the soft assignment probability of bit-width $b^k$, $g^k$ is a 
 
 
 
+### 
+
 
 
 Dynamic Network Quantization for Efficient Video Inference
 
 参与决策的条件：光流复杂度、结构/纹理复杂度
 
+
+
+要不要蒸馏呢？有可能不需要
+
+实验结果怎么证明：列举：
+
+QP = {256: 37, 512: 32, 1024: 27, 2048: 22, 4096: 22}
+
+1. 是采用多种量化方法？还是一种量化方法作为基线 ：表格/R-D图
+   1. 多种量化方法：需要对比：静态下的psnr、bpp/动态下的psnr（稍差）、bpp（节省）、ROI/Non-ROI区域分别的psnr、bpp（对比）
+   2. 一种量化方法作基线：全精度、静态下的psnr、bpp/动态下的psnr（稍差）、bpp（节省）、ROI/Non-ROI区域分别的psnr、bpp（对比）比多种方法多一个全精度
+2. 图片结果：
+3. 不同帧的不同区域的bit-width选择结果
+4. 定性结果
+
+
+
+
+
+## Conclusion
 
