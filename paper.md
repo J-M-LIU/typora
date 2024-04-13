@@ -168,17 +168,42 @@ $$
 $$
 P^k(\boldsymbol{x})=\frac{\exp\left((\log\pi^k(\boldsymbol{x})+g^k)/\tau\right)}{\sum_{j\in\Omega}\exp\left((\log\pi^j(\boldsymbol{x})+g^j)/\tau\right)},
 $$
-$P^k(x)$ denotes the soft assignment probability of bit-width $b^k$, $g^k$ is a random noise drawn from a Gumbel(0, 1) distribution. $\tau$ is the temperature parameter which controls the discreteness of the output distribution. As $\tau$ approaches 0, the output approximates a hard max function, resulting in a vector close to onehot encoding. As $\tau$ increases, the distribution becomes more uniform, meaning the probability is more evenly spread across the candidates.
+$P^k(x)$ denotes the soft assignment probability of bit-width $b^k$, $g^k$ is a random noise drawn from a Gumbel(0, 1) distribution. $\tau$ is the temperature parameter which controls the discreteness of the output distribution. As $\tau$ approaches 0, the output approximates a hard max function, resulting in a vector close to onehot encoding. As $\tau$ increases, the distribution becomes more uniform, meaning the probability is more evenly spread across the candidates. Following the setting of [], during training phase, we initialize  parameter τ at 5 and progressively decrease it to 0 through an annealing process .
 
 
 
-### 
+### Loss and Training Process
+
+本文采用DCVC中的视频编码框架来证明我们所提方法的有效性。视频压缩通过率失真优化在编码过程中平衡压缩比和视频质量，以最小化编码后的视频码率和编码引起的失真。整体的编码框架通过优化以下率失真权衡来实现：
+$$
+L_t=\lambda D_t+R_t=\lambda d(x_t,\hat{x}_t)+[H(\hat{y}_t)+H(\hat{m}_t)]
+$$
+$L_t$ is the total loss function for current time step $t$, which comprises two parts: distortion term $D_t$ and bit rates term $R_t$. $d(x_t, \hat{x}_t)$ measures the distortion between original frame $x_t$ and reconstructed frame $\hat{x}_t$. Distortion can be quantified by MSE(mean squared error) and  MS-SSIM (multiscale structural similarity). $\lambda$ is a Lagrange multiplier that controls the trade-off between distortion $D_t$ versus rate $R_t$. $H(\hat{y_t})$ and $H(\hat{m}_t)$ represents the bit rates of latent representations $\hat{y}_t$ and $\hat{m}_t$.
 
 
 
+| Stage   | Training Modules |                  Loss                  | Steps | LR        | Frames |
+| ------- | ---------------- | :------------------------------------: | ----- | --------- | ------ |
+| Stage 1 | MV-E/D           |          $\lambda D_{warp}+R$          | 300k  | $1E^{-4}$ | 2      |
+| Stage 2 | MV-E/D, ME       |          $\lambda D_{warp}+R$          | 200k  | $1E^{-4}$ | 2      |
+| Stage 3 | Contextual-E/D   |         $\lambda D_{recon}+R$          | 300k  | $1E^{-4}$ | 2      |
+| Stage 4 | All              |         $\lambda D_{recon}+R$          | 400k  | $1E^{-4}$ | 2      |
+| Stage 5 | All              | $\frac{1}{T}\sum^T{(\lambda D_t+R^t)}$ | 800k  | $1E^{-4}$ | 5      |
 
+我们使用渐进式训练策略训练整个编码框架，分为5个阶段。首先，我们固定其他网络模块参数，只训练motion vector(MV) encoder(E)/decoder(D)模块；之后，联合训练MV-E/D和motion estimation(ME)；之后，固定MV-E/D和MV网络参数，训练Contextual E/D模块；最后，开放网络所有参数，整个网络联合以端到端方式训练。
 
+在前两阶段，loss函数由参考帧 $\hat{x}_{t-1}$ 经过重构mv的warp后引起的失真与mv的bit rates构成。
+$$
+L_t = \lambda D_{warp} + R_{mv} = \lambda d(x_t, \ddot{x}_t) + H(\hat{m}_t)
+$$
 
+> loss including the distortion of the reference frame warped by the compressed motion and the bit-rate for compressing mv。
+
+第3阶段之后，MV的估计和编解码网络已收敛，我们固定这一部分参数，对条件编解码的部分参数进行训练。loss函数由重构帧和原始帧之间的失真以及所有latent code的bit rates组成。
+$$
+L_t = \lambda D_{recon} + R = \lambda d(x_t, \hat{x}_t) + [H(\hat{m}_t)+ H(\hat{y}_t)]
+$$
+zo
 
 
 ### 伪代码
@@ -222,6 +247,12 @@ end for
 
 
 ### 结构性知识转移
+
+衡量编码后两个分布的差异？KL散度？不知道咋办啊啊啊啊啊啊
+
+
+
+
 
 
 
