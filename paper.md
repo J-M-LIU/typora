@@ -76,7 +76,7 @@ Guo \etal proposes a single path one-shot model to address the weight co-adaptio
 In recent years, the research of neural video codec technology have seen substantial advancements.
 DVC is the first end-to-end optimized learned video compression method, which replaces each module in traditional video codec framework with convolutional neural networks.
 
-#TODO
+==#TODO==
 
 提一下 A neural video codec with spatial rate-distortion control这篇文章：采用预训练的
 
@@ -153,6 +153,10 @@ $$
 
 为了进行bit-width的选择，我们使用一个轻量的bit-allocator，通过判断图像区域特征的多种复杂性来预测其对应的bit-width，具体来说，分别为ROI区域和Non-ROI区域配置两个bit-allocator，ROI区域相比Non-ROI区域具有更高精度的bit-width候选。bit-allocator将输出由每个bit-width候选的选择概率组成的概率向量。
 
+
+
+![截屏2024-04-08 00.06.27](/Users/liujiamin/Library/Application Support/typora-user-images/截屏2024-04-08 00.06.27.png)
+
 ==#TODO:==
 
 Bit-allocator由xxx组成，经由softmax进一步计算bit-width的预测概率：
@@ -203,37 +207,11 @@ $$
 $$
 L_t = \lambda D_{recon} + R = \lambda d(x_t, \hat{x}_t) + [H(\hat{m}_t)+ H(\hat{y}_t)]
 $$
-zo
 
-
-### 伪代码
-
-
-
-Algorithm 1 The training procedure of the proposed dy- $\frac{\text{namic quantization scheme.}}{\textbf{Input: Input images Xand their labels; the trade-off pa-}}$ rameter $\alpha.$
-
-Output: The dynamic quantized neural network using oun algorithm.
-
-1: Set epochs $T$ and batch size $m$ for training DQNet
-
-2: Initialize the weights of network and bit-controller randomly and quantize the input images 
-
-3: for $t=1,\cdots,T\mathbf{do}$
-	4: Output the probability of different bit-widths for each layer using the bit-controller.
-
-​	5.Generate the one-hot vectors for selections of different bit-widths using Eq. (7).
-​	6: for $i=1,\cdots,n$ do
-​		for $j=1,\cdots,m$ do  
-
-​		Quantize $X_{i,j}$ and $W_i$ for $j^{th}$ sample in the $i^{th}$ layer according to the selection of different 		bitwidths using Eq. (5) and (6).
-
-​		end for
-​		Calculate the output of $i$-th layer using Eq. (4). 10:
-​	end for
-​	Update the entire network using back propagation d utilize Eq. (8) when up- according to Eq. 	(11) and dating the Gumbel-softmax layer.
-
-end for
-
+前4阶段只采用两个连续时间步的帧进行训练，忽略了 $\hat{x}_t$ 对于下一帧 $x_{t+1}$ 的潜在误差影响，从而导致导致误差传播。因此在最后一个阶段，将 $\hat{x}_t$ 作为 $x_{t+1}$ 编码阶段的参考帧，获得多个连续时间间隔的损失，其中T表示时间间隔，实验中我们设置为5.
+$$
+L^T=\frac{1}{T}\sum_{t=1}^TL_t=\frac{1}{T}\sum_{t=1}^T\{\lambda d(x_t,\hat{x}_t)+[H(\hat{y}_t)+H(\hat{m}_t)]\}
+$$
 
 
 
@@ -242,7 +220,7 @@ end for
 
 采用固定bit-width
 
-![截屏2024-04-08 00.06.27](/Users/liujiamin/Library/Application Support/typora-user-images/截屏2024-04-08 00.06.27.png)
+
 
 
 
@@ -275,7 +253,27 @@ end for
 
 **Datasets** training dataset是Vimeo-90K septuplet dataset，测试数据包括HEVC类B (1080P)， C (480P)， D (240P)， E (720P)来自通用测试条件，由编解码器标准社区使用。此外，还对MCL-JCV和UVG数据集的1080p视频进行了测试。
 
-**Implementation Details.** 我们的深度编码模型基于DCVC条件编码模型框架，并基于UNISAL模型生成显著性mask图，以此得到帧中的ROI区域和Non-ROI区域。受到xx的启发，我们采用渐进式训练框架，分为5个阶段进行训练。第一阶段固定其他网络模块参数，只训练ME模块参数；第二阶段开放光流预测网络模块，联合ME进行训练；第三阶段固定ME和光流预测网络，对条件编码部分网络进行训练；第4阶段开放全部网络参数，联合训练；最后一个阶段用于差错控制，连续多帧训练；
+**Implementation Details.** 我们的深度编码模型基于DCVC条件编码模型框架，并基于UNISAL模型生成显著性mask图，以此得到帧中的ROI区域和Non-ROI区域。受到xx的启发，我们采用渐进式训练框架，分为5个阶段进行训练。
+
+For the learning rate, it is set as 1e-4 at the start and 1e-5 at the fine-tuning stage. The training batch size is set as 4. For comparing DCVC with other methods, we follow [5] and train 4 models with different λ s {MSE: 256, 512, 1024, 2048; MS-SSIM: 8, 16, 32, 64}.
+
+The learning rate is initially set as 10−4 for all loss functions (1), (2), (3) and (4). When training the whole network by the final loss of (4), the learning rate decreases by the factor of 10 after convergence until 10−6.
+
+In OpenDVC, we first follow DVC [9] to train the PSNR- optimized model with the distortion D as the Mean Square Error (MSE) and λ = 256, 512, 1024 and 2048. Then, the MS-SSIM models are fine-tuned only using the final loss function (4) with D = 1 − MS-SSIM. The MS-SSIM mod- els with λ = 8, 16, 32 and 64 are fine-tuned from the pre- trained PSNR models with λ = 256, 512, 1024 and 2048, respectively. Note that, we use BPG [4] to compress the I-frames for the PSNR models in OpenDVC, and use the learned image compression method [7] to compress the I- frames for the MS-SSIM models. Specifically, the BPG with QP = 37, 32, 27 and 22 is used for PSNR models with λ = 256, 512, 1024 and 2048, respectively. The MS-SSIM models with λ = 8, 16, 32 and 64 use [7] with the quality levels of 2, 3, 5 and 7, respectively.
+
+Datasets In the training stage, we use the Vimeo-90k dataset[39]. Vimeo-90k is a widely used dataset for low-level vision tasks [35,20]. It is also used in the recent learning based video compression tasks [19,14]. To evaluate the compression performance of different methods, we employ the following datasets,
+
+HEVC Common Test Sequences [28] are the most popular test sequences for evaluating the video compression performance [28]. The contents in common test sequences are diversified and challenging. We use Class B(1920 × 1080), Class C(832 × 480) and Class D(352 × 288) in our experiments.
+
+Video Trace Library(VTL) dataset [3] contains lots of raw YUV se- quences used for the low-level computer vision tasks. Following the setting in [14], we use 20 video sequences with the resolution of 352 × 288 in our experi- ments, and the maximum length of the video clips is set to 300 for all sequences.
+
+Ultra Video Group(UVG) dataset [2] is a high frame rate(120fps) video dataset, in which the motion between neighbouring frames is small. Following the setting in [38,19,16], we use the video sequences with the resolution of 1920×1080 in our experiments.
+
+MCL-JVC dataset [34] consists of 24 videos with the resolution of 1920 × 1080. This dataset is widely used for video quality assessment. For a fair comparison with [14], we also include this dataset in our experiments.
+
+Implementation details. We train four models with different λ values (256, 512, 1024, 2048) in Eq. (1). To generate the I-frame/key-frame for video com- pression, we use the learning based image compression method in [9], in which the corresponding λ in the image codec are empirically set to 1024, 2048, 4096 and 12000, respectively.
+
+In our implementation, we use DVC [19] as the baseline method. In the training stage, the whole network is first optimized by using the loss in Eq.(1), then is fine-tuned based on the error propagation aware loss in Eq.(2). The corresponding batch sizes are set to 4 and 1, respectively. The resolution of the training images is 256×256. We use Adam optimizer [17] and the initial learning rate is set as 1e−4. In the inference stage, the encoder is also optimized by using
 
 **Bit-width candidates**
 
