@@ -4,7 +4,7 @@
 
 ## Abstract
 
-Deep neural networks have recently achieved great success in neural video compression(NVC), but due to the high complexity of deep video coding networks, NVC has not widely used in low-latency scenarios. Quantization is an effective way to reduce memory footprint and computational complexity for deep neural networks. However, existing methods overlook the unique characteristics of video frames and typically employ a fixed bit-width approach, which is suboptimal. In this paper, to achieve better frame reconstrction with lower computational complexity, we propose a ROI(Region of Interest)-aware dynamic quantization method for NVC networks that analyzes ROIs within video frames and dynamically alters the quantization strategy, allocating higher bit-widths for critical regions and lower bit-widths for less crucial areas. To this end, we present an efficient bit-allocator that adaptively determines quantization levels across different regions and frames, guided by the motion and texture complexity of the region. Experimental results conducted on 1080p standard test videos demonstrate effectiveness of the proposed dynamic quantization method.
+Deep neural networks have recently achieved great success in neural video compression(NVC), but due to the high complexity of deep video coding networks, NVC has not widely used in low-latency scenarios. Quantization is an effective way to reduce memory footprint and computational complexity for deep neural networks. However, existing methods overlook the unique characteristics of video frames and typically employ a fixed bit-width approach, which is suboptimal. In this paper, to achieve better frame reconstrction with lower computational complexity, we propose a ROI(Region of Interest)-aware dynamic quantization method for NVC networks that analyzes ROIs within video frames and dynamically alters the quantization strategy, allocating higher bit-widths for critical regions and lower bit-widths for less crucial areas. To this end, we present an efficient bit-allocator that adaptively determines quantization levels across different regions and frames, guided by the motion and texture complexity of the region. Experimental results conducted on standard test videos demonstrate effectiveness of the proposed dynamic quantization method.
 
 ## Introduction
 
@@ -32,7 +32,7 @@ To facilitate deployment, lots of works have been proposed. Quantization is one 
 
 #TODO
 
-因此，人们在网络压缩方面做了大量工作，来实现高效的推理。量化是降低神经网络计算复杂度的有效方法之一。我们发现，针对neura video codec的模型压缩工作很少，之前有人尝试对learned image compression进行量化。比如[^1][^2]中只对模型的权重进行量化，没有考虑对激活的量化；[^3][][][][][^4][][][][][^5] 同时考虑到了权重和激活值的量化，但他们均依赖于推理时的动态量化，根据图像的实时统计信息计算量化参数，然而这样需要很高的计算开销，不适用于低延迟场景下的深度视频编码。虽然以上方法为提高深度图像编码网络在低精度下的准确性和高效性做出了巨大努力，但并不完全适用于深度视频编码网络的特性：视频片段具有多样性，以同样的bit-width处理不同的视频片段限制了模型的性能；同时由于人眼对实时视频的不同区域关注度不同，对低关注度和高关注度区域采取相同的位宽无法有效分配计算资源，导致性能下降。因此我们设想，对更高关注度区域采取更高bit-width，低关注区域使用较低精度，可在保证不牺牲人眼关注区域精度的情况下有效实现计算节省。因此，本文旨在探索一种ROI区域感知的量化方法，实现更好的计算效率和重构质量的权衡。
+因此，人们在网络压缩方面做了大量工作，来实现高效的推理。量化是降低神经网络计算复杂度的有效方法之一。我们发现，针对neura video codec的模型压缩工作很少，之前有人尝试对learned image compression进行量化。比如[^1][^2]中只对模型的权重进行量化，没有考虑对激活的量化；[^3][][][][][^4][][][][][^5] 同时考虑到了权重和激活值的量化，但他们均依赖于推理时的动态量化，根据图像的实时统计信息计算量化参数，然而这样需要很高的计算开销，不适用于低延迟场景下的深度视频编码。虽然以上方法为提高深度图像编码网络在低精度下的准确性和高效性做出了巨大努力，但并不完全适用于深度视频编码网络的特性：视频片段具有多样性，以同样的bit-width处理不同的视频片段限制了模型的性能；同时由于人眼对实时视频的不同区域关注度不同，对低关注度和高关注度区域采取相同的位宽无法有效分配计算资源，导致性能下降。因此我们设想，对更高关注度区域采取更高bit-width，低关注区域使用较低精度，可在保证不牺牲人眼关注区域图像质量的情况下有效实现计算节省。因此，本文旨在探索一种ROI区域感知的量化方法，实现更好的计算效率和重构质量的权衡。
 
 To facilitate deployment, lots of works have been proposed to enable efficient inference. Quantization is one of the promising approaches for reducing the computational complexity of neural networks. We found little work on model compression for neura video codec and previous attempts to quantize learned image compression. For example, in [^1][^2], only the weights of the model are quantified, and the quantification of the activations is not considered. [^3][][][][][][^4][][][][][][][^5] consider both weight and activation quantization, but they all rely on dynamic quantization during inference, and calculate quantization parameters according to real-time image statistical information. However, this requires high computational overhead and is not suitable for depth video coding in low latency scenarios. Although the above methods have made great efforts to improve the accuracy and efficiency of deep image coding networks at low precision, they are not fully applicable to the characteristics of deep video coding networks: video clips are diverse, and processing different video clips with the same bit-width limits the performance of the model. At the same time, because the human eye pays different attention to different regions of real-time video, using the same bit width for low and high attention regions cannot effectively allocate computing resources, resulting in performance degradation. Therefore, we envisage that higher bit-width for higher attention regions and lower precision for low attention regions can effectively achieve computational savings without sacrificing the accuracy of the human eye attention regions. Therefore, this paper aims to explore an ROI region-aware quantization method that achieves a better trade-off between computational efficiency and reconstruction quality.
 
@@ -42,7 +42,7 @@ To facilitate deployment, lots of works have been proposed to enable efficient i
 
 本文提出一种简单的端到端网络量化方案，根据图x所示，根据输入视频片段的人眼关注度高/低区域，为不同区域动态选择量化位宽，同时兼顾高关注度区域的高质量重建和整体计算效率。具体而言，本文构建了一个轻量的bit allocator，用于决策每一帧的最佳bit分配，可以忽略其计算的开销。bit allocator实时决定每一帧中的不同区域采用什么bit-width，对高关注度区域分配更高的bit，反之对低关注度区域分配较低的bit。两个区域的特征分别传入单独进行编解码处理，在解码端完成融合并重构。对于网络权重，我们采用静态的量化方法，避免在编码端和解码端之间产生额外的量化信息传输。对于激活值，根据不同区域动态分配量化位宽，可以大大减少每个视频片段的计算量，实现效率和质量之间的更优权衡。
 
-在几个1080p standard test videos（HEVC、UVG、MCL-JCV）上进行了测试，验证了本方法的有效性。实验结果表明，保持人眼关注区域的质量同时可达到 xxx 的码率节省，并且平均减少了xxx的flops和xxx的内存。
+在几个 standard test videos（HEVC、UVG、MCL-JCV）上进行了测试，验证了本方法的有效性。实验结果表明，保持人眼关注区域的质量同时可达到 xxx 的码率节省，并且平均减少了xxx的flops和xxx的内存。
 
 In this paper, we propose a simple end-to-end network quantization scheme, which dynamically selects  quantization bit-width for different regions according to the high/low human eye attention regions of the input video clip as shown in Figure x, while taking into account the high-quality reconstruction of the high attention regions and the overall computational efficiency. Specifically, a lightweight bit allocator is constructed to decide the best bit allocation for each frame, and the overhead of its computation can be ignored. The bit allocator determines in real time what bit-width to use for different regions in each frame, and assigns higher bits to high interest regions and lower bits to low interest regions. The features of the two regions were passed into the decoder for encoding and decoding separately, and the fusion and reconstruction were completed at the decoder. For the network weights, we adopt a static quantization method to avoid additional transmission of quantized information between the encoder and decoder. For the activation value, the dynamic allocation of quantization bit width according to different regions can greatly reduce the computation of each video segment and achieve a more optimal trade-off between efficiency and quality.
 
@@ -52,7 +52,7 @@ Experiments on several 1080p standard test videos (HEVC, UVG, MCL-JCV) verify th
 
 In summary, the contributions of this work are:
 
-
+1. 
 
 
 
@@ -78,7 +78,7 @@ DVC is the first end-to-end optimized learned video compression method, which re
 
 ==#TODO==
 
-提一下 A neural video codec with spatial rate-distortion control这篇文章：采用预训练的
+提一下 A neural video codec with spatial rate-distortion control这篇文章：采用预训练的语义分割模型，对于在真实视频场景中更为多样的实例，可能面临语义不充足和缺失的情况，不利于实例内容丰富的场景。因此我们考虑一种针对人眼关注点感知的编码模型。
 
 ## Proposed Method
 
@@ -111,7 +111,7 @@ $$
 \boldsymbol{\hat{x}} =\boldsymbol{x}_q · \frac{\alpha}{s(b)}
 $$
 
-$x_q$ is the quantized value of an real input value $x$, defined by the quantization function $Q_b(x)$. The function involves a clamping operation, denoted as clamp$( x, \alpha) $, which restricts the value of $x$ within the range $[-\alpha,\alpha]$,where $\alpha$ is a predefined or learnable upper bound. The result of the clamping operation is then scaled by the ratio of the step size $s(b)$ over $\alpha$. The step size $s(b)$ is typically a function of the bit-width $b$, where $s(b) = 2^{b-1}$. With $\lfloor·\rceil$ rounds the result down to the nearest integer value.Then the quantized value $x_q$ is converted back to its approximate real-value representation $\hat{x}$. To enable the optimization of the non-differentiable quantization process in an end-to-end manner，the gradient is derived by using the straight through estimator (STE) to approximate the gradient through the round function as a pass through operation.
+$x_q$ is the quantized value of an input feature $x$, defined by the quantization function $Q_b(x)$. The function involves a clamping operation, denoted as $clamp( x, \alpha) $, which restricts the value of $x$ within the range $[-\alpha,\alpha]$,where $\alpha$ is a predefined or learnable upper bound. The result of the clamping operation is then scaled by the ratio of the step size $s(b)$ over $\alpha$. The step size $s(b)$ is typically a function of the bit-width $b$, where $s(b) = 2^{b-1}$. With $\lfloor·\rceil$ rounds the result down to the nearest integer value.Then the quantized value $x_q$ is converted back to its approximate real-value representation $\hat{x}$. To enable the optimization of the non-differentiable quantization process in an end-to-end manner，the gradient is derived by using the straight through estimator (STE) to approximate the gradient through the round function as a pass through operation.
 
 Similarly, the process of for weights quantization is denoted as:
 $$
@@ -126,9 +126,9 @@ $$
 
 ### Approach Overview
 
-我们基于DCVC来构建视频编码量化网络。给定输入帧 $x_t$，目标是以尽可能少的比特代价重建高质量的视频帧 $\hat{x}_t$。首先估计输入帧$x_t$与前解码帧$\hat{x}_t$之间对应的运动信息 $v_t$。通过运动信息编码，得到解码后的运动 $\hat{v}_t$。上一解码的帧 $\hat{x}_{t-1}$ 经过特征提取后，与解码的运动 $\hat{v}_t$ 共同作为输入，得到高维context信息 $\bar{x}_t$ 。 $\bar{x}_t$用于当前帧 $x_t$ 的上下文编码和解码。最终得到重构的解码帧 $\hat{x}_t$。
+我们基于DCVC[]来构建视频编码量化网络。给定输入帧 $x_t$，目标是以尽可能少的比特代价重建高质量的视频帧 $\hat{x}_t$。首先估计输入帧$x_t$与前解码帧$\hat{x}_t$之间对应的运动信息 $v_t$。通过运动信息编码，得到解码后的运动 $\hat{v}_t$。上一解码的帧 $\hat{x}_{t-1}$ 经过特征提取后，与解码的运动 $\hat{v}_t$ 共同作为输入，得到高维context信息 $\bar{x}_t$ 。 $\bar{x}_t$用于当前帧 $x_t$ 的上下文编码和解码。最终得到重构的解码帧 $\hat{x}_t$。
 
-图x显示了我们方法的概述。我们使用xxx来获取当前视频帧的显著性图，并生成人眼关注的显著区域和非显著区域的二值mask。在当前帧输入条件编码器之前，通过ROI mask图像将当前帧和预测光流的不同特征在编解码阶段分组处理。同时，我们制定了一个特定于图像帧的量化分配器，它实时为不同关注度的图像特征分配所需的精度，并在两组特征分组编解码过程中，不同区域的图像特征分别以被分配的精度完成训练和推理，且需要很少的计算成本。此外，由于视频片段中帧之间的连续性，当帧之间的内容变化不大时，当前帧的量化策略可沿用之前已传输帧的策略，以提高编解码效率。为了便于硬件实现，我们将GDN替换为ReLU，为了弥补替换GDN引起的非线性性缺失，我们引入了结构化知识转移来进一步提升模型的性能。
+图x显示了我们方法的概述。我们使用xxx来获取当前视频帧的显著性图，并生成人眼关注的显著区域和非显著区域的二值mask。在当前帧输入条件编码器之前，通过ROI mask图像将当前帧和预测光流的不同特征在编解码阶段分组处理。同时，我们制定了一个特定于图像帧的bit-width allocator，它基于区域的图像结构的复杂度和运动复杂度，实时为不同关注度的图像特征分配所需的精度，并在两组特征分组编解码过程中，不同区域的图像特征分别以被分配的精度完成训练和推理，且需要很少的计算成本。此外，由于视频片段中帧之间的连续性，当帧之间的内容变化不大时，当前帧的量化策略可沿用之前已传输帧的策略，以提高编解码效率。为了便于硬件实现，我们将GDN替换为ReLU，为了弥补替换GDN引起的非线性性缺失，我们引入了xxx知识蒸馏来进一步提升模型的性能。
 
 
 
@@ -136,9 +136,9 @@ $$
 
 已有的工作通常没有考虑到视频片段的多样性，以及帧内的复杂性，大多数的量化bit-width分配方法通常是静态的，没有考虑到由于人眼对于帧内不同区域的关注度不同，导致所需的计算资源也是不同的。为了精确分配计算资源，我们提出动态bit-width分配，根据输入调整关键区域和非关键区域的bit-width。
 
-假设ROI区域和Non-ROI区域均有K个不同量化bit-width候选 $b^1,b^2,...,b^K$​​​，bit-allocator将根据量化strategy为不同区域特征分别分配一个最优的量化bit-width。每一个量化bit-width $b^k$ 对应的特征量化函数为：
+假设ROI区域和Non-ROI区域均有K个不同量化bit-width候选 $b^1,b^2,...,b^K$，bit-allocator将根据量化strategy为输入的区域特征 $\boldsymbol{x}$ 分别分配一个最优的量化bit-width。每一个量化bit-width $b^k$ 对应的特征量化函数为：
 $$
-Q_{b^k}(\boldsymbol{x})=\lfloor\operatorname{clamp}(\boldsymbol{x},\alpha_k)\cdot\frac{s(b_k)}{\alpha_k}\rceil
+Q_{b^k}(\boldsymbol{x})=\lfloor\operatorname{clamp}(\boldsymbol{x},\alpha^k)\cdot\frac{s(b^k)}{\alpha^k}\rceil
 $$
 其中 $\alpha^k$表示第k个bit-width对应的scale parameter， $s(b^k) = 2^{b^k-1}$ 表示integer range of $b^k$ from a set of $K$​ bit-width options. 为了实现动态的帧内区域量化，我们通过bit-allocator为每一个bit-width分配一个概率，因此ROI/Non-ROI区域的动态量化可写作：
 $$
@@ -151,20 +151,22 @@ $$
 
 ### Bit-allocator for Dynamic Quantization
 
-为了进行bit-width的选择，我们使用一个轻量的bit-allocator，通过判断图像区域特征的多种复杂性来预测其对应的bit-width，具体来说，分别为ROI区域和Non-ROI区域配置两个bit-allocator，ROI区域相比Non-ROI区域具有更高精度的bit-width候选。bit-allocator将输出由每个bit-width候选的选择概率组成的概率向量。
-
-
+为了进行bit-width的选择，我们使用一个轻量的bit-allocator，根据图像区域特征的复杂度来分配bit-width，具体来说，分别为ROI区域和Non-ROI区域配置两个bit-allocator，ROI区域相比Non-ROI区域具有更高精度的bit-width候选。受到[xxx]的启发，我们以帧内的结构复杂度和运动复杂度分别为两个区域制定量化策略。bit-allocator将输出由每个bit-width候选的概率 $\pi^k(\boldsymbol{x})$ 组成的概率向量:
+$$
+\pi(\boldsymbol{x}) = \mathrm{Softmax}{\Big(fc\big(\sigma(\boldsymbol{x}),G(\boldsymbol{x}),\sigma(\boldsymbol{v}),G(\boldsymbol{v})\big)\Big)} \\
+s.t. \sum_K \pi^k(\boldsymbol{x}) = 1
+$$
+其中 $\sigma(\boldsymbol{x})$ 和 $\sigma(\boldsymbol{v})$ 分别表示图像的区域特征和预测光流的标准差，$G(\boldsymbol{x})$ 和 $G(\boldsymbol{v})$ 表示区域特征和光流向量在水平和垂直方向上的梯度。这几个指标评估了图像的纹理结构复杂度和运动复杂度，复杂结构或具有高运动内容的区域将分配更高bit-width。 我们将这几个指标concat后输入全连接层 $fc$，经由Softmax获得bit-allocator的输出logits $\pi^1,\pi^2,...,\pi^k$，对应K个bit-width candidates。
 
 ![截屏2024-04-08 00.06.27](/Users/liujiamin/Library/Application Support/typora-user-images/截屏2024-04-08 00.06.27.png)
 
 ==#TODO:==
 
-Bit-allocator由xxx组成，经由softmax进一步计算bit-width的预测概率：
-$$
-\pi(\boldsymbol{x}) = \mathrm{Softmax}{(fc(\sigma(\boldsymbol{x}),|\nabla I|))} \\
-\sum_K \pi^k(x) = 1
-$$
-bit-allocator的输出logits为 $\pi^1,\pi^2,...,\pi^k$，对于某一输入，根据argmax选定分配概率最大的量化bit-width：
+> Bit-allocator由xxx组成，经由softmax进一步计算bit-width的预测概率：
+
+> bit-allocator的输出logits为 $\pi^1,\pi^2,...,\pi^k$​，
+
+对于某一输入，根据argmax选定分配概率最大的量化bit-width：
 $$
 \boldsymbol{x}_{q} =Q_{b^k}(\boldsymbol{x})=\arg\max_{Q_{b^k}(\boldsymbol{x})}\pi^k(\boldsymbol{x})
 $$
@@ -228,6 +230,25 @@ $$
 
 衡量编码后两个分布的差异？KL散度？不知道咋办啊啊啊啊啊啊
 
+$$
+\begin{aligned}f(x;\mu_1,b_1)&=\frac1{2b_1}e^{-\frac{|x-\mu_1|}{b_1}}\\g(x;\mu_2,b_2)&=\frac1{2b_2}e^{-\frac{|x-\mu_2|}{b_2}}\end{aligned}
+$$
+
+
+对于两个Laplace分布，KL散度的计算比较直接。设$P$为教师网络产生的分布，参数为 $(\mu_1,b_1)$, 而$Q$为学生网络产生的分布，参数为 $(\mu_2,b_2)$, KL散度 $D_{KL}(P\parallel Q)$ 可以通过以下公式计算：
+
+$$
+D_{KL}(P\parallel Q)=\log\frac{b_2}{b_1}+\frac{b_1^2+(\mu_1-\mu_2)^2}{2b_2^2}-\frac12
+$$
+
+
+
+
+然而，基于一些文献中提供的通用公式，对于两个Laplace分布 Laplace$( \mu_1, b_1) $ 和Laplace$( \mu_2, b_2) $, KL散度的闭式表达式通常给出为：
+
+$$
+D_{KL}(f\parallel g)=\log\left(\frac{b_{2}}{b_{1}}\right)+\frac{b_{1}+|\mu_{2}-\mu_{1}|}{b_{2}}-1
+$$
 
 
 
@@ -316,3 +337,25 @@ QP = {256: 37, 512: 32, 1024: 27, 2048: 22, 4096: 22}
 
 ## Conclusion
 
+
+
+
+
+
+
+(a)第一个基于roi的多速率神经视频编解码器，可以动态控制和调整局部(帧内)和全局(每帧)比特率分配。
+
+(b)对常见视频数据集的定性和定量评估，表明感兴趣区域的R-D性能有很大提高，BD-rate节省高达60%。
+
+(c)有证据表明，像电话会议这样的用例不能从简单的ROI编码中受益，而且在具有高运动内容的视频中，通过使用更智能的码率保真控制算法，可以获得更大的增益。
+
+
+
+
+$$
+\begin{aligned}
+&\mathcal{L}=\mathbb{E}\left[\beta\mathcal{L}_{rate}+\mathcal{L}_{dist}^{ROI}+\frac{1}{\alpha}\mathcal{L}_{dist}^{BG}\right] \\
+&\mathcal{L}_{dist}^{ROI}(x,\hat{x},m)=m\odot(x-\hat{x})^{2} \\
+&\mathcal{L}_{dist}^{BG}(x,\hat{x},m)=(1-m)\odot(x-\hat{x})^{2}
+\end{aligned}
+$$
