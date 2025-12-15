@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: test
+  messages:
+    basename: messages,messages_sys,messages_mst
+    encoding: UTF-8
+  datasource:
+    schema: classpath:ddl/V1.1__Unittest.sql
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    url: jdbc:h2:mem:dbtest
+    initialization-mode: ALWAYS
+    continue-on-error: true
+    platform: h2
+  flyway:
+    enabled: false
+    schemas: UNIT-TEST
+    baseline-on-migrate: true
+    locations:
+      - classpath:ddl
+  h2:
+    console:
+      enabled: true
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
