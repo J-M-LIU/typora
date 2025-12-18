@@ -81,17 +81,11 @@ $d_k$ 键的维度，用于缩放，防止数值过大导致梯度消失
 自注意力机制的计算过程：
 
 1. 将输入单词转化成嵌入向量；
-
 2. 根据嵌入向量得到q，k，v三个向量；
-
-3. 为每个向量计算一个score：$score =q · k$ ；
-
+3. 计算当前encode位置的 q 与其他位置 k 的score：$score =q · k$ （需要计算当前的 $q_t$ 和其他所有位置的 $k_i$ 的score，最后进行sum）
 4. 为了梯度的稳定，Transformer使用了score归一化，即除以 $\sqrt{d_k}$ ；
-
 5. 对score施以softmax激活函数；
-
-6. softmax点乘Value值v，得到加权的每个输入向量的评分v；
-
+6. softmax点乘Value值v，得到加权的每个输入向量的评分 $v_i$；
 7. 相加之后得到最终的输出结果z ：$z=\sum{v}$。
 
 接下来我们详细看一下self-attention，其思想和attention类似，但是self-attention是Transformer用来将其他相关单词的“理解”转换成我们正在处理的单词的一种思路，例如：The animal didn't cross the street because it was too tired 这里的it到底代表的是animal还是street呢，对于机器来说很难判断，self-attention就能够让机器把it和animal联系起来，接下来我们看下详细的处理过程。
@@ -104,7 +98,7 @@ $d_k$ 键的维度，用于缩放，防止数值过大导致梯度消失
 
 <img src="https://pic3.zhimg.com/80/v2-8d98509cd1e0c7f72a0555c00cb8da06_1440w.webp" style="zoom:70%;" />
 
-3. 接下来，把点成的结果除以一个常数来进行归一化，这个值一般是采用上文提到的矩阵的第一个维度的开方即64的开方8，然后把得到的结果做softmax计算。得到的结果即是每个词对于当前位置的词的相关性大小。
+3. 接下来，把点乘的结果除以一个常数来进行归一化，这个值一般是采用上文提到的矩阵的第一个维度的开方即64的开方8，然后把得到的结果做softmax计算。得到的结果即是每个词对于当前位置的词的相关性大小。
 
 <img src="https://pic3.zhimg.com/80/v2-41384c3fad61e1943466f5b6d2476c0a_1440w.webp" style="zoom:70%;" />
 
