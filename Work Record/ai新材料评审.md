@@ -74,43 +74,17 @@ uni-miner私有化，部署本地服务器（如何限制账号，为何限制5�
 
 
 
-ELN插件下一步工作计划：
-
-1. OCR（手写实验表格记录读取上传等）
-
-2. 显微图像催化剂（不同形态）计数
-
-
-
 ## OCR插件
 
-### 手写表格识别
+Deepseek-OCR   https://zhuanlan.zhihu.com/p/1964739506629490036
 
-1. Surya：精准解析旋转/复杂布局表格，性能超Table Transformer。
+Surya
 
-   Github：https://github.com/VikParuchuri/surya
+Zorex
 
-### 选型建议
+Chandra
 
-1. 中文场景：
 
-   优先选 PaddleOCR（精度最高）或 GOT-OCR 2.0（多模态支持）。
-
-2. 表格/结构化数据：
-
-   Surya（复杂表格）或 PaddleOCR（简单表格）。
-
-3. 学术文献（含公式）：
-
-   GOT-OCR 2.0（全能）或 olmOCR（PDF专精）。
-
-4. 移动端/离线需求：
-
-   Umi-OCR（解压即用）或 PaddleOCR轻量版。
-
-5. 多语言混合文档：
-
-   EasyOCR（快速部署）或 Tesseract（稳定性高）。
 
 
 
@@ -126,5 +100,9 @@ ELN插件下一步工作计划：
 
 
 
-基础前沿：MOF材料吸附性质预测效果不好，数据量不够
+基础前沿研究所：MOF材料吸附性质预测效果不好，数据量不够
+
+
+
+
 
