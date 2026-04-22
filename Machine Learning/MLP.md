@@ -12,9 +12,9 @@
 
 假设有n个样本，d个输入特征，q个输出类别，隐藏层中有h个隐藏单元。
 
-隐藏层权重：$W^{(1)}\in R^{d\times h}$, 偏置：$b^{(1)} \in 1\times h $
+隐藏层权重：$W^{(1)}\in R^{d\times h}$, 偏置：$b^{(1)} \in 1\times h$
 
-输出层权重：$W^{(2)}\in R^{h\times q}$, 偏置：$b^{(2)} \in 1\times q $
+输出层权重：$W^{(2)}\in R^{h\times q}$, 偏置：$b^{(2)} \in 1\times q$
 $$
 \begin{gathered}
 H = XW^{(1)}+b^{(1)}\\
@@ -25,7 +25,7 @@ $$
 
 <img src="https://cdn.jsdelivr.net/gh/J-M-LIU/pic-bed@master//img/image-20220920115301105.png" style="zoom:50%;" />
 
-为了发挥多层架构的潜力，我们还需要一个额外的关键要素:在仿射变换之后对每个隐藏单元应用非线性的激活函数(activation function) $\sigma$. 有了激活函数，就不可能再将我们的多层感知机退化成线性模型.
+为了发挥多层架构的潜力，我们还需要一个额外的关键要素:在仿射变换之后对每个隐藏单元应用非线性的激活函数 $\sigma$. 有了激活函数，就不可能再将我们的多层感知机退化成线性模型.
 $$
 \begin{gathered}
 H^{(1)} = \sigma_1 (XW^{(1)}+b^{(1)})\\
